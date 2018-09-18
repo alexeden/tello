@@ -1,0 +1,38 @@
+{
+  "name": "tello",
+  "version": "1.0.0",
+  "description": "Server for interfacing with a Ryze Tello drone",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alexeden/tello.git"
+  },
+  "author": "Alex Eden",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/alexeden/tello/issues"
+  },
+  "homepage": "https://github.com/alexeden/tello#readme",
+  "devDependencies": {
+    "@types/node": "^10.10.1",
+    "nodemon": "^1.18.4",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "typescript": "^3.0.3"
+  },
+  "nodemonConfig": {
+    "ext": "ts",
+    "exec": "ts-node --files --pretty -P src/tsconfig.json src/index.ts",
+    "events": {},
+    "watch": [
+      "src/"
+    ]
+  },
+  "dependencies": {
+    "chalk": "^2.4.1",
+    "rxjs": "^6.3.2"
+  }
+}
