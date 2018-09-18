@@ -16,7 +16,7 @@ import { tag } from './tag.operator';
   // }
 
   const sub = fromUdpSocket(socket).pipe(tag('udp')).subscribe();
-  await new Promise((ok, err) => socket.bind(TelloPort.Client, TelloIP.Client, ok));
+  await new Promise(ok => socket.bind(TelloPort.Client, TelloIP.Client, ok));
 
   socket.send(Buffer.from('command', 'utf8'), TelloPort.Commands, TelloIP.Host);
 

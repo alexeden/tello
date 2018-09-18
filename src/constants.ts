@@ -6,6 +6,6 @@ export enum TelloPort {
 }
 
 export enum TelloIP {
-  Host = '192.168.10.1',
   Client = '0.0.0.0',
+  Host = '192.168.10.1',
 }
