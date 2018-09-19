@@ -1,24 +1,33 @@
-import * as udp from 'dgram';
-
-import { TelloPort, TelloIP } from './constants';
-import { fromUdpSocket } from './rx-dgram';
+import { map } from 'rxjs/operators';
+import { TelloPort, TelloIP, TelloControlCommands, TelloReadCommands } from './constants';
 import { tag } from './tag.operator';
-
+import { UdpSubject } from './udp-subject';
+import { TelloUtils } from './utils';
 
 (async () => {
-  const socket = udp.createSocket('udp4');
+  const commandSocket = UdpSubject.create(
+    { port: TelloPort.Client, address: TelloIP.Client },
+    { port: TelloPort.Commands, address: TelloIP.Host }
+  );
 
-  // try {
-  //   console.log(socket.address());
-  // }
-  // catch (error) {
-  //   console.error(error);
-  // }
+  const stateSocket = UdpSubject.create(
+    { port: TelloPort.State, address: TelloIP.Client },
+    { port: TelloPort.State, address: TelloIP.Host }
+  );
 
-  const sub = fromUdpSocket(socket).pipe(tag('udp')).subscribe();
-  await new Promise(ok => socket.bind(TelloPort.Client, TelloIP.Client, ok));
+  commandSocket.pipe(
+    map(msg => msg.toString()),
+    tag('command')
+  ).subscribe();
 
-  socket.send(Buffer.from('command', 'utf8'), TelloPort.Commands, TelloIP.Host);
+  stateSocket.pipe(
+    map(msg => msg.toString()),
+    map(TelloUtils.parseState),
+    tag('state', true)
+  ).subscribe();
 
-  setTimeout(() => sub.unsubscribe(), 10000);
+  setInterval(() => console.log(JSON.stringify(commandSocket.state, null, 2)), 5000);
+
+  commandSocket.next(TelloControlCommands.Start());
+  commandSocket.next(TelloReadCommands.Battery);
 })();
