@@ -3,7 +3,7 @@ import { Observable, Subscriber } from 'rxjs';
 
 
 export interface UdpSocketData {
-  msg: Buffer;
+  msg: string;
   rinfo: udp.RemoteInfo;
 }
 
@@ -11,7 +11,10 @@ export function fromUdpSocket(socket: udp.Socket): Observable<UdpSocketData> {
   return Observable.create((subsriber: Subscriber<UdpSocketData>) => {
     socket.on('listening', () => console.log('socket is listening'));
 
-    socket.on('message', (msg, rinfo) => subsriber.next({ msg, rinfo }));
+    socket.on('message', (msg, rinfo) => subsriber.next({
+      msg: msg.toString(),
+      rinfo,
+    }));
 
     socket.on('error', error => subsriber.error(error));
 
