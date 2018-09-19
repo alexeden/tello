@@ -18,6 +18,7 @@
   "homepage": "https://github.com/alexeden/tello#readme",
   "devDependencies": {
     "@types/node": "^10.10.1",
+    "@types/ramda": "^0.25.38",
     "nodemon": "^1.18.4",
     "ts-node": "^7.0.1",
     "tslint": "^5.11.0",
@@ -33,6 +34,7 @@
   },
   "dependencies": {
     "chalk": "^2.4.1",
+    "ramda": "^0.25.0",
     "rxjs": "^6.3.2"
   }
 }
