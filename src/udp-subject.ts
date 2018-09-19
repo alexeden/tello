@@ -17,10 +17,9 @@ export type UdpMessage = Buffer; // | string | Uint8Array | any[];
 export class UdpSubject extends Subject<UdpMessage> {
   static create = (
     client: UdpTarget,
-    host: UdpTarget,
     type: udp.SocketType = 'udp4'
   ): UdpSubject => {
-    return new UdpSubject(client, host, type);
+    return new UdpSubject(client, type);
   }
 
   private socket: udp.Socket;
@@ -28,10 +27,10 @@ export class UdpSubject extends Subject<UdpMessage> {
   private queue: UdpMessage[] = [];
   private bytesSent = 0;
   private messagesSent = 0;
+  private target: UdpTarget | null = null;
 
   constructor(
     readonly client: UdpTarget,
-    readonly host: UdpTarget,
     readonly socketType: udp.SocketType
   ) {
     super();
@@ -46,12 +45,16 @@ export class UdpSubject extends Subject<UdpMessage> {
     this.socket.unref();
 
     this.socket.on('listening', () => {
-      console.log('listening!');
       this.bound = true;
-      this.flush();
+      if (this.queue.length > 0) this.flush();
     });
 
     this.socket.bind(this.client.port, this.client.address);
+  }
+
+  setTarget(target: UdpTarget): this {
+    this.target = target;
+    return this;
   }
 
   private handleSocketError(error: Error) {
@@ -73,11 +76,14 @@ export class UdpSubject extends Subject<UdpMessage> {
   }
 
   async flush(): Promise<any> {
-    if (this.bound && this.queue.length > 0) {
+    if (!this.target) {
+      console.warn(`Can't send messages because the target is not set.`);
+      return;
+    }
+    else if (this.bound && this.queue.length > 0) {
       const msg = this.queue.pop()!;
-      console.log('flush!');
       await new Promise((ok, err) => {
-        this.socket.send(msg, this.host.port, this.host.address, (error, bytes) => {
+        this.socket.send(msg, this.target!.port, this.target!.address, (error, bytes) => {
           if (error) {
             this.handleSocketError(error);
             err(error);
@@ -106,24 +112,3 @@ export class UdpSubject extends Subject<UdpMessage> {
     super.complete();
   }
 }
-
-
-// export function fromUdpSocket(socket: udp.Socket): Observable<UdpSocketData> {
-//   return Observable.create((subsriber: Subscriber<UdpSocketData>) => {
-//     socket.on('listening', () => console.log('socket is listening'));
-
-//     socket.on('message', (msg, rinfo) => subsriber.next({
-//       msg: msg.toString(),
-//       rinfo,
-//     }));
-
-//     socket.on('error', error => subsriber.error(error));
-
-//     socket.on('close', () => subsriber.complete());
-
-//     return () => {
-//       console.log('closing socket');
-//       socket.close();
-//     };
-//   });
-// }

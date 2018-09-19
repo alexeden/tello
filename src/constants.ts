@@ -1,16 +1,24 @@
 import * as R from 'ramda';
 
-export enum TelloPort {
-  Client = 8001,
-  Commands = 8889,
-  State = 8890,
-  Video = 11111,
-}
+export const TelloCommandClient = {
+  port: 8001,
+  address: '0.0.0.0',
+};
 
-export enum TelloIP {
-  Client = '0.0.0.0',
-  Host = '192.168.10.1',
-}
+export const TelloStateClient = {
+  address: '0.0.0.0',
+  port: 8890,
+};
+
+export const TelloVideoClient = {
+  address: '0.0.0.0',
+  port: 11111,
+};
+
+export const TelloCommandServer = {
+  port: 8889,
+  address: '192.168.10.1',
+};
 
 const distanceClamp = R.clamp(20, 500);
 const rotationClamp = R.clamp(1, 3600);
