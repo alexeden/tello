@@ -7,40 +7,43 @@
  */
 // ffmpeg -i udp://0.0.0.0:11111 -f sdl "window title"
 // import * as readline from 'readline';
-// import chalk from 'chalk';
-// import {
-//   map,
-//   take,
-//   // tap,
-//   // filter,
-// } from 'rxjs/operators';
+import chalk from 'chalk';
+import { fromEvent } from 'rxjs';
+import {
+  map,
+  take,
+  tap,
+  filter,
+} from 'rxjs/operators';
 import {
   TelloControlCommands,
   TelloCommandClient,
   TelloCommandServer,
+  TelloStateClient,
+  TelloVideoClient,
   TelloReadCommands,
-  // TelloStateClient,
-  // TelloVideoClient,
-  // TelloReadCommands,
 } from './constants';
-// import { tag } from './tag.operator';
+import { tag } from './tag.operator';
 import { UdpSubject } from './udp-subject';
-// import { fromEvent } from 'rxjs';
-// import { TelloUtils } from './utils';
+import { TelloUtils } from './utils';
 
 (async () => {
 
-  const commandSocket = UdpSubject.create(TelloCommandClient).setTarget(TelloCommandServer);
-  // const stateSocket = UdpSubject.create(TelloStateClient);
-  // const videoSocket = UdpSubject.create(TelloVideoClient);
+  const commandSocket = UdpSubject.create(TelloCommandClient).setTarget(TelloCommandServer).bind();
+  const stateSocket = UdpSubject.create(TelloStateClient);
+  const videoSocket = UdpSubject.create(TelloVideoClient).bind();
+
   commandSocket.next(TelloControlCommands.Start());
+  commandSocket.next(TelloControlCommands.VideoOff());
   commandSocket.next(TelloControlCommands.VideoOn());
 
-  // videoSocket.pipe(
-  //   take(10),
-  //   map(buffer => buffer.length),
-  //   tag('video message length')
-  // ).subscribe();
+  videoSocket.pipe(
+    take(100),
+    map(buffer => {
+      return buffer.slice(2);
+    }),
+    tag('video message length')
+  ).subscribe();
 
   // const ui = readline.createInterface({
   //   input: process.stdin,
