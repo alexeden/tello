@@ -42,14 +42,23 @@ export class UdpSubject extends Subject<UdpMessage> {
 
     this.socket.on('message', (msg, rinfo) => super.next(msg));
 
-    this.socket.unref();
 
     this.socket.on('listening', () => {
       this.bound = true;
       if (this.queue.length > 0) this.flush();
     });
 
-    this.socket.bind(this.client.port, this.client.address);
+  }
+
+  bind(): this {
+    if (this.bound) {
+      console.warn(`already bound!`);
+    }
+    else {
+      this.socket.unref();
+      this.socket.bind(this.client.port, this.client.address);
+    }
+    return this;
   }
 
   setTarget(target: UdpTarget): this {
