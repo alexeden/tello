@@ -65,5 +65,20 @@
     "size": "N/A",
     "bit_rate": "N/A",
     "probe_score": "51"
+  },
+  "sample_packet": {
+    "codec_type": "video",
+    "stream_index": "0",
+    "pts": "N/A",
+    "pts_time": "N/A",
+    "dts": "N/A",
+    "dts_time": "N/A",
+    "duration": "24000",
+    "duration_time": "0.020000",
+    "convergence_duration": "N/A",
+    "convergence_duration_time": "N/A",
+    "size": "6236",
+    "pos": "30948",
+    "flags": "__"
   }
 }
