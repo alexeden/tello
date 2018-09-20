@@ -41,8 +41,9 @@ const TBL_CRC16 = [
   0xf78f, 0xe606, 0xd49d, 0xc514, 0xb1ab, 0xa022, 0x92b9, 0x8330, 0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78,
 ];
 
-export const calcCRC8 = (buf: Buffer, size: number) => {
+export const calcCRC8 = (buf: Buffer) => {
   let i = 0;
+  let size = buf.length;
   let seed = INIT_SEED8;
 
   while (size-- > 0) {
@@ -51,12 +52,13 @@ export const calcCRC8 = (buf: Buffer, size: number) => {
   return seed & 0xff;
 };
 
-export const calcCRC16 = (buf: Buffer | void, size: number) => {
+export const calcCRC16 = (buf: Buffer | void) => {
   if (!buf) {
     return 0xffff;
   }
 
   let seed = INIT_SEED16;
+  let size = 0;
   let i = 0;
   while (size-- > 0) {
     seed = TBL_CRC16[(seed ^ buf[i++]) & 0xff] ^ (seed >> 8);

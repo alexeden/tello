@@ -26,25 +26,37 @@ import {
 import { tag } from './tag.operator';
 import { UdpSubject } from './udp-subject';
 import { TelloUtils } from './utils';
+import { TelloPacket, PacketType, Command } from './lib';
 
 (async () => {
 
-  const commandSocket = UdpSubject.create(TelloCommandClient).setTarget(TelloCommandServer).bind();
-  const stateSocket = UdpSubject.create(TelloStateClient);
-  const videoSocket = UdpSubject.create(TelloVideoClient).bind();
+  const pkt = TelloPacket.of({ type: PacketType.Set, command: Command.DoTakeoff, sequence: 484 });
+  const buf = TelloPacket.toBuffer(pkt);
+  console.log(buf);
+  // const commandSocket = UdpSubject.create(TelloCommandClient).setTarget(TelloCommandServer).bind();
+  // const stateSocket = UdpSubject.create(TelloStateClient);
+  // const videoSocket = UdpSubject.create(TelloVideoClient).bind();
 
-  commandSocket.next(TelloControlCommands.Start());
-  commandSocket.next(TelloControlCommands.VideoOff());
-  commandSocket.next(TelloControlCommands.VideoOn());
+  // commandSocket.next(TelloControlCommands.Start());
+  // commandSocket.next(TelloControlCommands.VideoOff());
+  // commandSocket.next(TelloControlCommands.VideoOn());
 
-  videoSocket.pipe(
-    take(100),
-    map(buffer => {
-      return buffer.slice(2);
-    }),
-    tag('video message length')
-  ).subscribe();
+  // videoSocket.pipe(
+  //   take(100),
+  //   map(buffer => {
+  //     return buffer.slice(2);
+  //   }),
+  //   tag('video message length')
+  // ).subscribe();
 
+  // setInterval(
+  //   () => {
+  //     console.log(JSON.stringify(commandSocket.state, null, 2));
+  //     commandSocket.next(TelloControlCommands.Start());
+  //     commandSocket.next(TelloReadCommands.Battery);
+  //   },
+  //   5000
+  // );
   // const ui = readline.createInterface({
   //   input: process.stdin,
   //   output: process.stdout,
@@ -107,12 +119,5 @@ import { TelloUtils } from './utils';
   //   tag('state', true)
   // ).subscribe();
 
-  setInterval(
-    () => {
-      console.log(JSON.stringify(commandSocket.state, null, 2));
-      commandSocket.next(TelloControlCommands.Start());
-      commandSocket.next(TelloReadCommands.Battery);
-    },
-    5000
-  );
+
 })();
