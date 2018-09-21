@@ -1,12 +1,13 @@
-import { Packet, Command, Sender, Type, Offset } from './packet.types';
+import { Packet, Sender, Offset } from './packet.types';
 import { MIN_PACKET_SIZE, HEADER } from './packet.constants';
 import { calcCRC8, calcCRC16 } from './crc';
+import { GetCommand, Type } from './commands';
 
 export class TelloPacket {
 
   static of(p: Partial<Packet> = {}, sequence = 0): Packet {
     return {
-      command: Command.DoConnect,
+      command: GetCommand.QueryVersion,
       sequence,
       sender: Sender.App,
       payload: Buffer.of(),
@@ -41,33 +42,5 @@ export class TelloPacket {
     const c16 = calcCRC16(buf.slice(0, 9 + payload.length));
     buf.writeUInt16LE(c16, Offset.Crc16 + payload.length - 1);
     return buf;
-  }
-
-  static stickPacket(): Packet {
-    const payload = Buffer.allocUnsafe(11);
-    let packedAxes = 1024 & 0x07ff;
-    packedAxes |= 1024 & 0x07ff << 11;
-    packedAxes |= 1024 & 0x07ff << 22;
-    packedAxes |= 1024 & 0x07ff << 33;
-    payload[0] = packedAxes;
-    payload[1] = packedAxes >> 8;
-    payload[2] = packedAxes >> 16;
-    payload[3] = packedAxes >> 24;
-    payload[4] = packedAxes >> 32;
-    payload[5] = packedAxes >> 40;
-    const now = new Date();
-    payload[6] = now.getHours();
-    payload[7] = now.getMinutes();
-    payload[8] = now.getSeconds();
-    const ms = now.getMilliseconds();
-    payload[9] = ms & 0xff;
-    payload[10] = ms >> 8;
-
-    return TelloPacket.of({
-      type: Type.Data2,
-      command: Command.SetStick,
-      sequence: 0,
-      payload,
-    });
   }
 }

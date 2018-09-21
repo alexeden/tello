@@ -13,6 +13,8 @@ ffprobe -loglevel error \
 
 Errors produced:
 ```
+left block unavailable for requested intra mode
+left block unavailable for requested intra4x4 mode -1
 error while decoding MB 52 3, bytestream -7
 decode_slice_header error
 non-existing PPS 0 referenced

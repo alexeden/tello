@@ -1,4 +1,4 @@
-import { Command } from './commands';
+import { Command, Type } from './commands';
 
 /**
  * Position	Usage
@@ -21,15 +21,6 @@ export enum Offset {
   Sequence  = 7,
   Payload   = 9,
   Crc16     = 10,
-}
-
-export enum Type {
-  Extended = 0, // 0x8X ???
-  Get      = 1, // 0x48
-  Data1    = 2, // 0x50
-  Data2    = 4, // 0x60
-  Set      = 5, // 0x68
-  Flip     = 6, // 0x70
 }
 
 export enum Sender {

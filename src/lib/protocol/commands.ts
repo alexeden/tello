@@ -1,3 +1,12 @@
+export enum Type {
+  Extended = 0, // 0x8X ???
+  Get      = 1, // 0x48
+  DataOne  = 2, // 0x50
+  DataTwo  = 4, // 0x60
+  Set      = 5, // 0x68
+  Flip     = 6, // 0x70
+}
+
 // TODO: What type are these?
 //   DoConnect           = 0x0001, // 1
 //   Connected           = 0x0002, // 2
@@ -29,9 +38,7 @@ export enum GetCommand {
   DoThrowTakeoff = 0x5D,
   DoPalmLand = 0x5E,
   FileDone = 0x64,
-
-  // TODO... what's this?
-  HandleImuAngle = 0x5A,
+  HandleImuAngle = 0x5A, // TODO... what's this?
 }
 
 // Type 2
@@ -49,7 +56,6 @@ export enum DataTwoCommand {
   QueryVideoSpsPps = 0x25,
   SetStick = 0x50,
 }
-
 
 // Type 5
 export enum SetCommand {
@@ -85,3 +91,64 @@ export type Command
   | DataTwoCommand
   | SetCommand
   | FlipCommand;
+
+
+// const commandTypeMap = (() => {
+//   const map: { [command: number]: Type } = {};
+//   [
+//     [ ExtendedCommand, Type.Extended],
+//     [ GetCommand, Type.Get],
+//     [ DataOneCommand, Type.DataOne],
+//     [ DataTwoCommand, Type.DataTwo],
+//     [ SetCommand, Type.Set],
+//     [ FlipCommand, Type.Flip],
+//   ]
+//   .forEach(([ commandSet, type ]: [Command, Type]) => {
+//     Object.values(commandSet).forEach((command: number) => {
+//       map[command] = type;
+//     });
+//   });
+
+//   Object.values(ExtendedCommand).forEach((command: number) => {
+//     map[command] = Type.Extended;
+//   });
+//   Object.values(GetCommand).forEach((command: number) => {
+//     map[command] = Type.Get;
+//   });
+//   Object.values(DataOneCommand).forEach((command: number) => {
+//     map[command] = Type.DataOne;
+//   });
+//   Object.values(DataTwoCommand).forEach((command: number) => {
+//     map[command] = Type.DataTwo;
+//   });
+//   Object.values(SetCommand).forEach((command: number) => {
+//     map[command] = Type.Set;
+//   });
+//   Object.values(FlipCommand).forEach((command: number) => {
+//     map[command] = Type.Flip;
+//   });
+//   return map;
+// })();
+
+// console.log(commandTypeMap);
+
+// export const commandType = (cmd: Command): Type => {
+//   return Type.DataTwo;
+// };
+
+export function typeToCommands(type: Type.Extended): typeof ExtendedCommand;
+export function typeToCommands(type: Type.Get): typeof GetCommand;
+export function typeToCommands(type: Type.DataOne): typeof DataOneCommand;
+export function typeToCommands(type: Type.DataTwo): typeof DataTwoCommand;
+export function typeToCommands(type: Type.Set): typeof SetCommand;
+export function typeToCommands(type: Type.Flip): typeof FlipCommand;
+export function typeToCommands(type: Type) {
+  switch (type) {
+    case Type.Extended: return ExtendedCommand;
+    case Type.Get: return GetCommand;
+    case Type.DataOne: return DataOneCommand;
+    case Type.DataTwo: return DataTwoCommand;
+    case Type.Set: return SetCommand;
+    case Type.Flip: return FlipCommand;
+  }
+}

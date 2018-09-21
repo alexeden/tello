@@ -22,7 +22,7 @@ import {
   TelloStateClient,
   TelloVideoClient,
   TelloReadCommands,
-  TelloPacket, Type, Command,
+  TelloPacket, Type, Command, GetCommand, DataTwoCommand, Packet, DataOneCommand,
 
 } from './lib';
 import { UdpSubject, tag } from './utils';
@@ -36,40 +36,93 @@ const connectRequest = () => {
 };
 const keyframeRequestPacket = () => {
   return TelloPacket.of({
-    command: Command.QueryVideoSPSPPS,
-    type: Type.Data2,
+    command: DataTwoCommand.QueryVideoSpsPps,
+    type: Type.DataTwo,
   });
 };
 
+let seq = 0;
+
+const setDateTimePacket = (): Packet => {
+
+  const buf = Buffer.alloc(15);
+  const now = new Date();
+  buf.writeUInt8(0x00, 0);
+  buf.writeUInt16LE(now.getFullYear(), 1);
+  buf.writeUInt16LE(now.getMonth(), 3);
+  buf.writeUInt16LE(now.getDay(), 5);
+  buf.writeUInt16LE(now.getHours(), 7);
+  buf.writeUInt16LE(now.getMinutes(), 9);
+  buf.writeUInt16LE(now.getSeconds(), 11);
+  buf.writeUInt16LE(now.getMilliseconds() * 1000 & 0xffff, 13);
+
+  return TelloPacket.of({
+    command: DataOneCommand.SetDateTime,
+    type: Type.DataOne,
+    payload: buf,
+    sequence: seq++,
+  });
+};
+
+const stickPacket = (): Packet => {
+  const payload = Buffer.allocUnsafe(11);
+  let packedAxes = 1024 & 0x07ff;
+  packedAxes |= 1024 & 0x07ff << 11;
+  packedAxes |= 1024 & 0x07ff << 22;
+  packedAxes |= 1024 & 0x07ff << 33;
+  payload[0] = packedAxes;
+  payload[1] = packedAxes >> 8;
+  payload[2] = packedAxes >> 16;
+  payload[3] = packedAxes >> 24;
+  payload[4] = packedAxes >> 32;
+  payload[5] = packedAxes >> 40;
+  const now = new Date();
+  payload[6] = now.getHours();
+  payload[7] = now.getMinutes();
+  payload[8] = now.getSeconds();
+  const ms = now.getMilliseconds();
+  payload[9] = ms & 0xff;
+  payload[10] = ms >> 8;
+
+  return TelloPacket.of({
+    type: Type.DataTwo,
+    command: DataTwoCommand.SetStick,
+    sequence: 0,
+    payload,
+  });
+};
+
+const seenCommands = new Set();
 
 (async () => {
 
-  const pkt = TelloPacket.of({ type: Type.Set, command: Command.DoConnect, sequence: 0 });
-  console.log('original: ', JSON.stringify(pkt, null, 4));
-  const buf = TelloPacket.toBuffer(pkt);
-  console.log('buffer: ', buf);
-  const parsed = TelloPacket.fromBuffer(buf);
-  console.log('parsed: ', JSON.stringify(parsed, null, 4));
-  // const commandSocket = UdpSubject.create(TelloCommandClient).setTarget(TelloCommandServer).bind();
+  // const pkt = TelloPacket.of({ type: Type.Set, command: Command.DoConnect, sequence: 0 });
+  // console.log('original: ', JSON.stringify(pkt, null, 4));
+  // const buf = TelloPacket.toBuffer(pkt);
+  // console.log('buffer: ', buf);
+  // const parsed = TelloPacket.fromBuffer(buf);
+  // console.log('parsed: ', JSON.stringify(parsed, null, 4));
+  const commandSocket = UdpSubject.create(TelloCommandClient).setTarget(TelloCommandServer).bind();
   // // const stateSocket = UdpSubject.create(TelloStateClient);
   // const videoSocket = UdpSubject.create(TelloVideoClient).bind();
 
-  // commandSocket.pipe(
-  //   // map(msg => msg.toString()),
-  //   map(TelloPacket.fromBuffer),
-  //   map((packet: any) => {
-  //     packet.payload = packet.payload.toString();
-  //     return packet;
-  //   }),
-  //   filter(({ command }) => command !== Command.FlightStatus),
-  //   tag('Command response', true)
-  //   // tap(response => {
-  //   //   console.log(response);
-  //   //   // const color = chalk[response.includes('unknown') ? 'redBright' : 'greenBright'];
-  //   //   // console.log(`\n${color(response)}`);
-  //   //   // ui.prompt();
-  //   // })
-  // ).subscribe();
+  commandSocket.pipe(
+    // map(msg => msg.toString()),
+    map(TelloPacket.fromBuffer),
+    map(packet => {
+      // packet.payload = packet.payload.toString();
+      seenCommands.add(packet.command.toString(16));
+      return seenCommands;
+    })
+    // filter(({ command }) => command === DataTwoCommand.QueryVideoSpsPps),
+    // tag('Command response')
+    // tap(response => {
+    //   console.log(response);
+    //   // const color = chalk[response.includes('unknown') ? 'redBright' : 'greenBright'];
+    //   // console.log(`\n${color(response)}`);
+    //   // ui.prompt();
+    // })
+  ).subscribe();
 
   // videoSocket.pipe(
   //   // take(100),
@@ -79,13 +132,15 @@ const keyframeRequestPacket = () => {
   //   tag('video message length')
   // ).subscribe();
 
-  // commandSocket.next(TelloPacket.connectRequest());
+  commandSocket.next(connectRequest());
 
-  // const stickPkt = TelloPacket.toBuffer(TelloPacket.stickPacket());
-  // const keyframePkt = TelloPacket.toBuffer(TelloPacket.keyframeRequestPacket());
+  const stickPkt = TelloPacket.toBuffer(stickPacket());
+  const keyframePkt = TelloPacket.toBuffer(keyframeRequestPacket());
+  // const keyframePkt = TelloPacket.toBuffer(keyframeRequestPacket());
 
-  // setInterval(() => commandSocket.next(stickPkt), 20);
-  // setInterval(() => commandSocket.next(keyframePkt), 1000);
+  setInterval(() => commandSocket.next(TelloPacket.toBuffer(setDateTimePacket())), 500);
+  setInterval(() => commandSocket.next(stickPkt), 200);
+  setInterval(() => commandSocket.next(keyframePkt), 1000);
   // commandSocket.next(connect);
   // commandSocket.next(TelloControlCommands.Start());
   // commandSocket.next(TelloControlCommands.VideoOff());
