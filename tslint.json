@@ -24,6 +24,7 @@
     "member-access": [true, "no-public"],
     "member-ordering": false,
     // "no-any": true,
+    "no-bitwise": false,
     "no-conditional-assignment": true,
     "no-consecutive-blank-lines": [true, 3],
     "no-console": false,

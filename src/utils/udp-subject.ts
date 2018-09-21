@@ -44,6 +44,7 @@ export class UdpSubject extends Subject<UdpMessage> {
 
 
     this.socket.on('listening', () => {
+      console.log('listening!');
       this.bound = true;
       if (this.queue.length > 0) this.flush();
     });

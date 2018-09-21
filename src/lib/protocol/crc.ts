@@ -1,5 +1,3 @@
-// tslint:disable no-bitwise
-
 const INIT_SEED8 = 0x77;
 const INIT_SEED16 = 0x3692;
 
@@ -42,12 +40,9 @@ const TBL_CRC16 = [
 ];
 
 export const calcCRC8 = (buf: Buffer) => {
-  let i = 0;
-  let size = buf.length;
   let seed = INIT_SEED8;
-
-  while (size-- > 0) {
-    seed = TBL_CRC8[(seed ^ buf[i++]) & 0xff];
+  for (const byte of buf) {
+    seed = TBL_CRC8[(seed ^ byte) & 0xff];
   }
   return seed & 0xff;
 };
@@ -58,10 +53,8 @@ export const calcCRC16 = (buf: Buffer | void) => {
   }
 
   let seed = INIT_SEED16;
-  let size = 0;
-  let i = 0;
-  while (size-- > 0) {
-    seed = TBL_CRC16[(seed ^ buf[i++]) & 0xff] ^ (seed >> 8);
+  for (const byte of buf) {
+    seed = TBL_CRC16[(seed ^ byte) & 0xff] ^ (seed >> 8);
   }
   return seed;
 };

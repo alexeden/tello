@@ -1,7 +1,7 @@
 import * as R from 'ramda';
 
 export const TelloCommandClient = {
-  port: 8001,
+  port: 8800,
   address: '0.0.0.0',
 };
 
@@ -12,7 +12,7 @@ export const TelloStateClient = {
 
 export const TelloVideoClient = {
   address: '0.0.0.0',
-  port: 11111,
+  port: 6038,
 };
 
 export const TelloCommandServer = {

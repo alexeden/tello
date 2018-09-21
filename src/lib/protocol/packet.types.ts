@@ -1,7 +1,3 @@
-import { calcCRC8, calcCRC16 } from '../utils/crc';
-
-// tslint:disable no-bitwise
-
 /**
  * Position	Usage
  * 0	      0xcc indicates the start of a packet
@@ -14,16 +10,27 @@ import { calcCRC8, calcCRC16 } from '../utils/crc';
  * (n-1)-n	CRC16 of bytes 0 to n-2
  */
 
-export enum PacketType {
-  Extended = 0,
-  Get      = 1,
-  Data1    = 2,
-  Data2    = 4,
-  Set      = 5,
-  Flip     = 6,
+export enum Offset {
+  Header    = 0,
+  Size      = 1,
+  Crc8      = 3,
+  Type      = 4,
+  Command   = 5,
+  Sequence  = 7,
+  Payload   = 9,
+  Crc16     = 10,
 }
 
-export enum PacketSender {
+export enum Type {
+  Extended = 0, //
+  Get      = 1, //
+  Data1    = 2, //
+  Data2    = 4, // 0x60
+  Set      = 5, // 0x68
+  Flip     = 6, //
+}
+
+export enum Sender {
   Drone = 0x80,
   App   = 0x40,
 }
@@ -81,53 +88,9 @@ export enum Command {
 }
 
 export interface Packet {
-  sender: PacketSender;
-  type: PacketType;
+  sender: Sender;
+  type: Type;
   command: Command;
   payload: Buffer;
   sequence: number;
-}
-
-export class TelloPacket {
-  static readonly HEADER = 0xCC;
-  static readonly MIN_PACKET_SIZE = 0x0B;
-
-  private static packetTypeId(sender: PacketSender, type: PacketType) {
-    return sender | type;
-  }
-
-  static of(p: Partial<Packet> = {}, sequence = 0): Packet {
-    return {
-      command: Command.DoConnect,
-      sequence,
-      sender: PacketSender.App,
-      payload: Buffer.of(),
-      type: PacketType.Extended,
-      ...p,
-    };
-  }
-
-  static toBuffer(p: Packet): Buffer {
-    const { payload } = p;
-    const n = payload.length + TelloPacket.MIN_PACKET_SIZE;
-    const buf = Buffer.allocUnsafe(n);
-
-    buf[0] = TelloPacket.HEADER;
-    buf[1] = n << 3;
-    buf[2] = n >> 5;
-    buf[3] = calcCRC8(buf.slice(0, 3));
-    buf[4] = p.sender | (p.type << 3);
-    buf[5] = p.command;
-    buf[6] = p.command >> 8;
-    buf[7] = p.sequence;
-    buf[8] = p.sequence >> 8;
-    const c16 = calcCRC16(buf.slice(0, 9 + payload.length));
-    payload.copy(buf, 9);
-    buf[9 + payload.length] = c16;
-    buf[10 + payload.length] = c16 >> 8;
-    // console.log(`(2) type: ${p.type.toString(2)}, sender: ${p.sender.toString(2)}, value: ${buf[4].toString(2)}`);
-    // console.log(`(16) type: ${p.type.toString(16)}, sender: ${p.sender.toString(16)}, value: ${buf[4].toString(16)}`);
-    // console.log(`(10) type: ${p.type.toString(10)}, sender: ${p.sender.toString(10)}, value: ${buf[4].toString(10)}`);
-    return buf;
-  }
 }

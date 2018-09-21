@@ -1,6 +1,6 @@
-import { TelloState } from './types';
+import { TelloState } from './sdk.types';
 
-export class TelloUtils {
+export class TelloSdkUtils {
   // “pitch:%d;roll:%d;yaw:%d;vgx:%d;vgy%d;vgz:%d;templ:%d;temph:%d;tof:%d;h:%d;bat:%d;baro:%.2f;time:%d;agx:%.2f;agy:%.2f;agz:%.2f;\r\n”
   /**
    * Sample argument:
