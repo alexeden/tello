@@ -1,3 +1,7 @@
+// TODO: What type are these?
+//   DoConnect           = 0x0001, // 1``
+//   Connected           = 0x0002, // 2
+
 export enum Type {
   Extended = 0, // 0x8X ???
   Get      = 1, // 0x48
@@ -7,148 +11,125 @@ export enum Type {
   Flip     = 6, // 0x70
 }
 
-// TODO: What type are these?
-//   DoConnect           = 0x0001, // 1
-//   Connected           = 0x0002, // 2
-
-
-// Type 0
-export enum ExtendedCommand {
-  WifiStrength = 0x1A,
-  LightStrength = 0x35,
+export enum Command {
+  // Type 0 - Extended
   Error1 = 0x43,
   Error2 = 0x44,
   FlightStatus = 0x56,
+  LightStrength = 0x35,
   LogDataWrite = 0x1051,
-}
+  WifiStrength = 0x1A,
 
-// Type 1
-export enum GetCommand {
-  QuerySsid = 0x11,
-  QuerySsidPass = 0x13,
-  QueryWifiRegion = 0x15,
-  ExposureVals = 0x34, // get or set?
-  QueryVideoBitrate = 0x28,
-  QueryVersion = 0x45,
-  QueryActivationTime = 0x47,
-  QueryLoaderVersion = 0x49,
-  QueryHeightLimit = 0x1056,
-  QueryLowBattThresh = 0x1057,
-  QueryAttitude = 0x1059,
-  DoThrowTakeoff = 0x5D,
+  // Type 1 - Get
   DoPalmLand = 0x5E,
+  DoThrowTakeoff = 0x5D,
+  ExposureVals = 0x34, // get or set?
   FileDone = 0x64,
   HandleImuAngle = 0x5A, // TODO... what's this?
-}
+  QueryActivationTime = 0x47,
+  QueryAttitude = 0x1059,
+  QueryHeightLimit = 0x1056,
+  QueryLoaderVersion = 0x49,
+  QueryLowBattThresh = 0x1057,
+  QuerySsid = 0x11,
+  QuerySsidPass = 0x13,
+  QueryVersion = 0x45,
+  QueryVideoBitrate = 0x28,
+  QueryWifiRegion = 0x15,
 
-// Type 2
-export enum DataOneCommand {
-  SetDateTime = 0x46,
-  LogHeader = 0x1050,
-  LogConfig = 0x1052,
-  FileSize = 0x62,
+  // Type 2 - DataOne
   FileData = 0x63,
+  FileSize = 0x62,
+  LogConfig = 0x1052,
+  LogHeader = 0x1050,
+  SetDateTime = 0x46,
   SmartVideoStatus = 0x81,
-}
 
-// Type 4
-export enum DataTwoCommand {
+  // Type 4 - DataTwo
   QueryVideoSpsPps = 0x25,
   SetStick = 0x50,
-}
 
-// Type 5
-export enum SetCommand {
+  // Type 5 - Set
+  DoBounce = 0x1053,
+  DoCalibration = 0x1054,
+  DoLand = 0x55,
+  DoSmartVideo = 0x80,
+  DoStartRecording = 0x32,
+  DoTakeoff = 0x54,
+  DoTakePic = 0x30,
+  EisSetting = 0x24,
+  QueryJpegQuality = 0x37,
+  SetAttitude = 0x1058,
+  SetDynAdjRate = 0x21,
+  SetHeightLimit = 0x58,
+  SetLowBattThresh = 0x1055,
   SetSsid = 0x12,
   SetSsidPass = 0x14,
-  SetWifiRegion = 0x16,
-  DoTakePic = 0x30,
-  SwitchPicVid = 0x31,
-  DoStartRecording = 0x32,
-  QueryJpegQuality = 0x37,
-  DoTakeoff = 0x54,
-  DoLand = 0x55,
-  SetHeightLimit = 0x58,
-  DoCalibration = 0x1054,
-  SetLowBattThresh = 0x1055,
-  SetAttitude = 0x1058,
   SetVideoBitrate = 0x20,
-  SetDynAdjRate = 0x21,
-  EisSetting = 0x24,
-  DoSmartVideo = 0x80,
-  DoBounce = 0x1053,
-}
+  SetWifiRegion = 0x16,
+  SwitchPicVid = 0x31,
 
-// Type 6
-export enum FlipCommand {
+  // Type 6 - Flip
   DoFlip = 0x5C,
 }
 
-export type Command
-  = ExtendedCommand
-  | GetCommand
-  | DataOneCommand
-  | DataTwoCommand
-  | SetCommand
-  | FlipCommand;
-
-
-// const commandTypeMap = (() => {
-//   const map: { [command: number]: Type } = {};
-//   [
-//     [ ExtendedCommand, Type.Extended],
-//     [ GetCommand, Type.Get],
-//     [ DataOneCommand, Type.DataOne],
-//     [ DataTwoCommand, Type.DataTwo],
-//     [ SetCommand, Type.Set],
-//     [ FlipCommand, Type.Flip],
-//   ]
-//   .forEach(([ commandSet, type ]: [Command, Type]) => {
-//     Object.values(commandSet).forEach((command: number) => {
-//       map[command] = type;
-//     });
-//   });
-
-//   Object.values(ExtendedCommand).forEach((command: number) => {
-//     map[command] = Type.Extended;
-//   });
-//   Object.values(GetCommand).forEach((command: number) => {
-//     map[command] = Type.Get;
-//   });
-//   Object.values(DataOneCommand).forEach((command: number) => {
-//     map[command] = Type.DataOne;
-//   });
-//   Object.values(DataTwoCommand).forEach((command: number) => {
-//     map[command] = Type.DataTwo;
-//   });
-//   Object.values(SetCommand).forEach((command: number) => {
-//     map[command] = Type.Set;
-//   });
-//   Object.values(FlipCommand).forEach((command: number) => {
-//     map[command] = Type.Flip;
-//   });
-//   return map;
-// })();
-
-// console.log(commandTypeMap);
-
-// export const commandType = (cmd: Command): Type => {
-//   return Type.DataTwo;
-// };
-
-export function typeToCommands(type: Type.Extended): typeof ExtendedCommand;
-export function typeToCommands(type: Type.Get): typeof GetCommand;
-export function typeToCommands(type: Type.DataOne): typeof DataOneCommand;
-export function typeToCommands(type: Type.DataTwo): typeof DataTwoCommand;
-export function typeToCommands(type: Type.Set): typeof SetCommand;
-export function typeToCommands(type: Type.Flip): typeof FlipCommand;
-export function typeToCommands(type: Type) {
-  switch (type) {
-    case Type.Extended: return ExtendedCommand;
-    case Type.Get: return GetCommand;
-    case Type.DataOne: return DataOneCommand;
-    case Type.DataTwo: return DataTwoCommand;
-    case Type.Set: return SetCommand;
-    case Type.Flip: return FlipCommand;
+export const getCommandType = (cmd: Command): Type => {
+  switch (cmd) {
+    case Command.Error1:
+    case Command.Error2:
+    case Command.FlightStatus:
+    case Command.LightStrength:
+    case Command.LogDataWrite:
+    case Command.WifiStrength:
+      return Type.Extended;
+    case Command.DoPalmLand:
+    case Command.DoThrowTakeoff:
+    case Command.ExposureVals:
+    case Command.FileDone:
+    case Command.HandleImuAngle:
+    case Command.QueryActivationTime:
+    case Command.QueryAttitude:
+    case Command.QueryHeightLimit:
+    case Command.QueryLoaderVersion:
+    case Command.QueryLowBattThresh:
+    case Command.QuerySsid:
+    case Command.QuerySsidPass:
+    case Command.QueryVersion:
+    case Command.QueryVideoBitrate:
+    case Command.QueryWifiRegion:
+      return Type.Get;
+    case Command.FileData:
+    case Command.FileSize:
+    case Command.LogConfig:
+    case Command.LogHeader:
+    case Command.SetDateTime:
+    case Command.SmartVideoStatus:
+      return Type.DataOne;
+    case Command.QueryVideoSpsPps:
+    case Command.SetStick:
+      return Type.DataTwo;
+    case Command.DoBounce:
+    case Command.DoCalibration:
+    case Command.DoLand:
+    case Command.DoSmartVideo:
+    case Command.DoStartRecording:
+    case Command.DoTakeoff:
+    case Command.DoTakePic:
+    case Command.EisSetting:
+    case Command.QueryJpegQuality:
+    case Command.SetAttitude:
+    case Command.SetDynAdjRate:
+    case Command.SetHeightLimit:
+    case Command.SetLowBattThresh:
+    case Command.SetSsid:
+    case Command.SetSsidPass:
+    case Command.SetVideoBitrate:
+    case Command.SetWifiRegion:
+    case Command.SwitchPicVid:
+      return Type.Set;
+    case Command.DoFlip:
+      return Type.Flip;
+    default:
+      throw new Error(`Unknown command "${cmd}", can't get command type.`);
   }
-}
+};

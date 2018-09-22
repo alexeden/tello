@@ -1,18 +1,25 @@
 import { Packet, Sender, Offset } from './packet.types';
 import { MIN_PACKET_SIZE, HEADER } from './packet.constants';
 import { calcCRC8, calcCRC16 } from './crc';
-import { GetCommand, Type } from './commands';
+import { Command, Type, getCommandType } from './commands';
 
 export class TelloPacket {
 
-  static of(p: Partial<Packet> = {}, sequence = 0): Packet {
+  static of(
+    p: PartialExclude<'command', Packet> = {
+      command: Command.QueryVersion,
+    },
+    sequence = 0
+  ): Packet {
+    const { command } = p;
+    const type = getCommandType(command);
     return {
-      command: GetCommand.QueryVersion,
       sequence,
       sender: Sender.App,
       payload: Buffer.of(),
-      type: Type.Extended,
       ...p,
+      command,
+      type,
     };
   }
 

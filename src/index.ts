@@ -22,7 +22,7 @@ import {
   TelloStateClient,
   TelloVideoClient,
   TelloReadCommands,
-  TelloPacket, Type, Command, GetCommand, DataTwoCommand, Packet, DataOneCommand,
+  TelloPacket, Type, Command, Packet,
 
 } from './lib';
 import { UdpSubject, tag } from './utils';
@@ -36,7 +36,7 @@ const connectRequest = () => {
 };
 const keyframeRequestPacket = () => {
   return TelloPacket.of({
-    command: DataTwoCommand.QueryVideoSpsPps,
+    command: Command.QueryVideoSpsPps,
     type: Type.DataTwo,
   });
 };
@@ -57,7 +57,7 @@ const setDateTimePacket = (): Packet => {
   buf.writeUInt16LE(now.getMilliseconds() * 1000 & 0xffff, 13);
 
   return TelloPacket.of({
-    command: DataOneCommand.SetDateTime,
+    command: Command.SetDateTime,
     type: Type.DataOne,
     payload: buf,
     sequence: seq++,
@@ -85,8 +85,7 @@ const stickPacket = (): Packet => {
   payload[10] = ms >> 8;
 
   return TelloPacket.of({
-    type: Type.DataTwo,
-    command: DataTwoCommand.SetStick,
+    command: Command.SetStick,
     sequence: 0,
     payload,
   });
