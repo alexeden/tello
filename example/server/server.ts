@@ -21,13 +21,5 @@ app.use(webpackDevMiddleware(compiler, {
   publicPath: webpackConfig.output.publicPath,
 }));
 
-// app.use(express.static(path.resolve(__dirname, '..', 'client')));
-
-
-const httpsServer = https.createServer(httpsServerOptions, app).listen(httpsPort);
-const wsServer = new ws.Server({ server: httpsServer });
-
-wsServer.on('connection', (socket, request) => {
-  console.log('incoming connection!');
-
-});
+export const httpsServer = https.createServer(httpsServerOptions, app).listen(httpsPort);
+export const wssServer = new ws.Server({ server: httpsServer });
