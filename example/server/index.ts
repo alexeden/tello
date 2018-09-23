@@ -9,6 +9,7 @@
 // import * as readline from 'readline';
 import chalk from 'chalk';
 import { fromEvent } from 'rxjs';
+import './server';
 import {
   map,
   take,
