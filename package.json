@@ -2,21 +2,27 @@
   "name": "tello",
   "version": "1.0.0",
   "description": "Server for interfacing with a Ryze Tello drone",
-  "main": "index.js",
-  "scripts": {
-    "start": "nodemon"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/alexeden/tello.git"
   },
   "author": "Alex Eden",
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/alexeden/tello/issues"
-  },
   "homepage": "https://github.com/alexeden/tello#readme",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon",
+    "build": "tsc -p src",
+    "postinstall": "npm run build"
+  },
+  "dependencies": {
+    "chalk": "^2.4.1",
+    "crc": "^3.8.0",
+    "ramda": "^0.25.0",
+    "rxjs": "^6.3.2"
+  },
   "devDependencies": {
+    "@types/crc": "^3.4.0",
     "@types/node": "^10.10.1",
     "@types/ramda": "^0.25.38",
     "nodemon": "^1.18.4",
@@ -26,15 +32,11 @@
   },
   "nodemonConfig": {
     "ext": "ts",
-    "exec": "ts-node --files --pretty -P src/tsconfig.json src/index.ts",
+    "exec": "ts-node --files --pretty -P example/server/tsconfig.json example/server/index.ts",
     "events": {},
     "watch": [
-      "src/"
+      "src/",
+      "example/"
     ]
-  },
-  "dependencies": {
-    "chalk": "^2.4.1",
-    "ramda": "^0.25.0",
-    "rxjs": "^6.3.2"
   }
 }

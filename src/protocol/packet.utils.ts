@@ -1,24 +1,24 @@
 import { Packet, Sender, Offset } from './packet.types';
 import { MIN_PACKET_SIZE, HEADER } from './packet.constants';
-import { calcCRC8, calcCRC16 } from './crc';
-import { Command, Type, getCommandType } from './commands';
+import { Command, getCommandType } from './commands';
+import { crc8, crc16 } from 'crc';
 
 export class TelloPacket {
 
   static of(
-    p: PartialExclude<'command', Packet> = {
+    p: Partial<Packet> = {
       command: Command.QueryVersion,
     },
     sequence = 0
   ): Packet {
     const { command } = p;
-    const type = getCommandType(command);
+    const type = getCommandType(command!);
     return {
       sequence,
       sender: Sender.App,
       payload: Buffer.of(),
       ...p,
-      command,
+      command: command!,
       type,
     };
   }
@@ -41,12 +41,12 @@ export class TelloPacket {
     const buf = Buffer.allocUnsafe(n);
     buf.writeUInt8(HEADER, Offset.Header);
     buf.writeUInt16LE(n << 3, Offset.Size);
-    buf.writeUInt8(calcCRC8(buf.slice(0, 3)), Offset.Crc8);
+    buf.writeUInt8(crc8(buf.slice(0, 3)), Offset.Crc8);
     buf.writeUInt8(p.sender | (p.type << 3), Offset.Type);
     buf.writeUInt16LE(p.command, Offset.Command);
     buf.writeUInt16LE(p.sequence, Offset.Sequence);
     payload.copy(buf, Offset.Payload);
-    const c16 = calcCRC16(buf.slice(0, 9 + payload.length));
+    const c16 = crc16(buf.slice(0, 9 + payload.length));
     buf.writeUInt16LE(c16, Offset.Crc16 + payload.length - 1);
     return buf;
   }
