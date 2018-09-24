@@ -1,16 +1,18 @@
-const path = require('path');
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+import * as path from 'path';
+import * as webpack from 'webpack';
+import * as HtmlWebpackPlugin from 'html-webpack-plugin';
 
-module.exports = {
+export const config: webpack.Configuration & { devServer: any } = {
   target: 'web',
+  mode: 'development',
   context: path.resolve(__dirname, 'client'),
-  entry: './index.js',
+  entry: './app.ts',
   devServer: {
     host: 'localhost',
-    port: 4001,
+    port: 4000,
     https: true,
     historyApiFallback: true,
-    contentBase: [ path.resolve(__dirname, 'client') ]
+    contentBase: [ path.resolve(__dirname, 'client') ],
   },
   output: {
     filename: 'main.js',
@@ -25,6 +27,5 @@ module.exports = {
       chunksSortMode: 'dependency',
       minify: false,
     }),
-  ]
-
+  ],
 };

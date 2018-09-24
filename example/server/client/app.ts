@@ -1,7 +1,8 @@
 import Vue from 'vue';
 
-// Vue.
 new Vue({
   el: '#app',
-
+  mounted() {
+    console.log('mounted');
+  },
 });

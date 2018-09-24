@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as express from 'express';
 import * as ws from 'ws';
+import { config } from './webpack.config';
 import * as webpack from 'webpack';
 import * as webpackDevMiddleware from 'webpack-dev-middleware';
 
@@ -15,10 +16,10 @@ const httpsServerOptions: https.ServerOptions = {
 };
 
 // tslint:disable-next-line:no-var-requires
-const webpackConfig = require('./webpack.config.js');
-const compiler = webpack(webpackConfig);
+// const webpackConfig = require('./webpack.config.js');
+const compiler = webpack(config);
 app.use(webpackDevMiddleware(compiler, {
-  publicPath: webpackConfig.output.publicPath,
+  publicPath: config.output!.publicPath!,
 }));
 
 export const httpsServer = https.createServer(httpsServerOptions, app).listen(httpsPort);
