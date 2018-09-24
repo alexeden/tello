@@ -1,3 +1,3 @@
-export class PacketGenerator {
+export class TelloPacketGenerator {
 
 }

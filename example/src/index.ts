@@ -17,12 +17,12 @@ import {
   filter,
 } from 'rxjs/operators';
 import {
-  TelloControlCommands,
+  // TelloControlCommands,
   TelloCommandClient,
   TelloCommandServer,
   TelloStateClient,
   TelloVideoClient,
-  TelloReadCommands,
+  // TelloReadCommands,
   TelloPacket, Type, Command, Packet,
   UdpSubject, tag,
 } from '../../dist';
