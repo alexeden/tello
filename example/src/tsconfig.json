@@ -1,11 +1,33 @@
 {
-  "extends": "../../src/tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "skipLibCheck": true,
+    "allowJs": false,
+    "allowSyntheticDefaultImports": false,
+    "alwaysStrict": true,
+    "declaration": true,
+    "diagnostics": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "forceConsistentCasingInFileNames": false,
     "lib": [
       "dom",
       "esnext"
-    ]
+    ],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": false,
+    "outDir": "../dist",
+    "skipLibCheck": true,
+    "sourceMap": false,
+    "strictNullChecks": true,
+    "suppressImplicitAnyIndexErrors": false,
+    "strictPropertyInitialization": true,
+    "types": [
+      "node"
+    ],
+    "target": "esnext"
   }
 }

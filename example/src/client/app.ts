@@ -2,7 +2,9 @@
 import Vue from 'vue';
 import { WebSocketSubject } from 'rxjs/webSocket';
 // import { Prop } from 'vue/types/options';
-import { Subscription } from 'rxjs';
+import { Subscription, pipe } from 'rxjs';
+import { } from 'rxjs/operators';
+import { retryBackoff } from 'backoff-rxjs';
 
 
 // const Dashboard = Vue.extend({
@@ -16,6 +18,7 @@ import { Subscription } from 'rxjs';
 const template = `
 <div>
   <h1>Hello, Tello</h1>
+  <p v-if="socket.isStopped">Socket is stopped</p>
   <pre>{{ latest }}</pre>
 </div>
 `;
@@ -31,10 +34,19 @@ new Vue({
     };
   },
   mounted() {
+    (window as any).app = this;
     console.log('mounted');
-    this.subscription = this.socket.asObservable().subscribe(
+    this.subscription = this.socket.asObservable().pipe(
+      retryBackoff({
+        initialInterval: 1000,
+      })
+    ).subscribe(
       msg => {
         this.latest = msg;
+      },
+      error => {
+        console.error(error);
+        // setTimeout(() => window.location.reload(), 1000);
       }
     );
   },

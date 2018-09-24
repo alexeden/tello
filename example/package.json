@@ -23,15 +23,17 @@
     "webpack-dev-server": "^3.1.8"
   },
   "dependencies": {
+    "backoff-rxjs": "0.0.10",
     "express": "^4.16.3",
     "vue": "^2.5.17"
   },
   "nodemonConfig": {
-    "ext": "ts",
+    "ext": "ts,js",
     "exec": "ts-node --files --pretty -P src/tsconfig.json src/index.ts",
     "events": {},
     "watch": [
-      "src/"
+      "src/",
+      "../dist"
     ]
   }
 }

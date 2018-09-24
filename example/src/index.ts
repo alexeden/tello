@@ -9,7 +9,7 @@
 // import * as readline from 'readline';
 import chalk from 'chalk';
 import { fromEvent } from 'rxjs';
-import './server';
+import { broadcast } from './server';
 import {
   map,
   take,
@@ -25,7 +25,7 @@ import {
   TelloReadCommands,
   TelloPacket, Type, Command, Packet,
   UdpSubject, tag,
-} from '../../src';
+} from '../../dist';
 
 
 const connectRequest = () => {
@@ -108,11 +108,12 @@ const seenCommands = new Set();
   commandSocket.pipe(
     // map(msg => msg.toString()),
     map(TelloPacket.fromBuffer),
-    map(packet => {
-      // packet.payload = packet.payload.toString();
-      seenCommands.add(packet.command.toString(16));
-      return seenCommands;
-    })
+    tap(broadcast)
+    // map(packet => {
+    //   // packet.payload = packet.payload.toString();
+    //   seenCommands.add(packet.command.toString(16));
+    //   return seenCommands;
+    // })
     // filter(({ command }) => command === DataTwoCommand.QueryVideoSpsPps),
     // tag('Command response')
     // tap(response => {
