@@ -19,7 +19,7 @@
     "chalk": "^2.4.1",
     "crc": "^3.8.0",
     "ramda": "^0.25.0",
-    "rxjs": "^6.3.2"
+    "rxjs": "6.3.2"
   },
   "devDependencies": {
     "@types/crc": "^3.4.0",
@@ -34,11 +34,10 @@
   },
   "nodemonConfig": {
     "ext": "ts",
-    "exec": "ts-node --files --pretty -P example/server/tsconfig.json example/server/index.ts",
+    "exec": "npm run build",
     "events": {},
     "watch": [
-      "src/",
-      "example/"
+      "src/"
     ]
   }
 }

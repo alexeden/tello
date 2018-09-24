@@ -2,6 +2,10 @@
   "extends": "../../src/tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "skipLibCheck": false
+    "skipLibCheck": true,
+    "lib": [
+      "dom",
+      "esnext"
+    ]
   }
 }
