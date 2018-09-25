@@ -1,5 +1,6 @@
 import * as udp from 'dgram';
 import { Subject } from 'rxjs';
+import { AddressInfo } from 'net';
 
 
 export interface UdpSocketData {
@@ -17,24 +18,23 @@ export type UdpMessage = Buffer; // | string | Uint8Array | any[];
 export class UdpSubject extends Subject<UdpMessage> {
   static create = (
     client: UdpTarget,
-    type: udp.SocketType = 'udp4'
+    target?: UdpTarget
   ): UdpSubject => {
-    return new UdpSubject(client, type);
+    return new UdpSubject(client, target || null);
   }
 
   private socket: udp.Socket;
-  private bound = false;
-  private queue: UdpMessage[] = [];
   private bytesSent = 0;
   private messagesSent = 0;
-  private target: UdpTarget | null = null;
+  // private target: UdpTarget | null = null;
 
   constructor(
     readonly client: UdpTarget,
-    readonly socketType: udp.SocketType
+    readonly target: UdpTarget | null
+    // readonly socketType: udp.SocketType
   ) {
     super();
-    this.socket = udp.createSocket(this.socketType);
+    this.socket = udp.createSocket('udp4');
 
     this.socket.on('close', () => super.complete());
 
@@ -42,28 +42,26 @@ export class UdpSubject extends Subject<UdpMessage> {
 
     this.socket.on('message', (msg, rinfo) => super.next(msg));
 
-
-    this.socket.on('listening', () => {
-      console.log('listening!');
-      this.bound = true;
-      if (this.queue.length > 0) this.flush();
-    });
-
+    // this.socket.on('listening', () => {
+    // });
   }
 
-  bind(): this {
-    if (this.bound) {
-      console.warn(`already bound!`);
+  isListening(): null | AddressInfo {
+    try {
+      return this.socket.address() as AddressInfo;
+    }
+    catch (err) {
+      return null;
+    }
+  }
+
+  start(): this {
+    if (this.isListening()) {
+      console.warn(`already started!`);
     }
     else {
-      this.socket.unref();
       this.socket.bind(this.client.port, this.client.address);
     }
-    return this;
-  }
-
-  setTarget(target: UdpTarget): this {
-    this.target = target;
     return this;
   }
 
@@ -72,49 +70,24 @@ export class UdpSubject extends Subject<UdpMessage> {
     super.error(error);
   }
 
-  get state() {
-    return {
-      queued: this.queue.length,
-      bound: this.bound,
-      messages: this.messagesSent,
-      bytes: this.bytesSent,
-    };
-  }
-
-  get queued() {
-    return this.queue.length;
-  }
-
-  async flush(): Promise<any> {
+  async next(sendable: UdpMessage): Promise<boolean> {
     if (!this.target) {
-      console.warn(`Can't send messages because the target is not set.`);
-      return;
+      return false;
     }
-    else if (this.bound && this.queue.length > 0) {
-      const msg = this.queue.pop()!;
-      await new Promise((ok, err) => {
-        this.socket.send(msg, this.target!.port, this.target!.address, (error, bytes) => {
-          if (error) {
-            this.handleSocketError(error);
-            err(error);
-          }
-          else {
-            this.messagesSent++;
-            this.bytesSent += bytes;
-            ok();
-          }
-        });
-      });
-      return this.flush();
-    }
-    else {
-      return;
-    }
-  }
 
-  async next(sendable: UdpMessage) {
-    this.queue.unshift(sendable);
-    await this.flush();
+    return new Promise<boolean>((ok, err) => {
+      this.socket.send(sendable, this.target!.port, this.target!.address, (error, bytes) => {
+        if (error) {
+          this.handleSocketError(error);
+          ok(false);
+        }
+        else {
+          this.messagesSent++;
+          this.bytesSent += bytes;
+          ok(true);
+        }
+      });
+    });
   }
 
   complete() {

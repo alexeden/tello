@@ -13,9 +13,11 @@
   "scripts": {
     "start": "nodemon",
     "build": "tsc -p src",
+    "test": "ts-node -P src/tsconfig.json src/test.ts",
     "postinstall": "npm run build"
   },
   "dependencies": {
+    "backoff-rxjs": "0.0.10",
     "chalk": "^2.4.1",
     "crc": "^3.8.0",
     "ramda": "^0.25.0",
@@ -34,7 +36,7 @@
   },
   "nodemonConfig": {
     "ext": "ts",
-    "exec": "npm run build",
+    "exec": "npm run test",
     "events": {},
     "watch": [
       "src/"
