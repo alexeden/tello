@@ -20,7 +20,6 @@ export class Tello {
 
   readonly generator: TelloPacketGenerator;
 
-
   constructor() {
     this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer).start();
     this.videoSocket = UdpSubject.create(TelloVideoClient).start();
@@ -49,10 +48,7 @@ export class Tello {
       1000
     ));
 
-
-    console.log('connectionRequestSent: ', connectionRequestSent);
-    // connect[9] = TelloVideoClient.port & 0xff;
-    // connect[10] = TelloVideoClient.port >> 8;
+    this.sendPacket(this.generator.queryVersion());
 
   }
 

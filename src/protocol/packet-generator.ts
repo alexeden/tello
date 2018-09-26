@@ -6,7 +6,11 @@ import { Command } from './commands';
 export class TelloPacketGenerator {
   private sequence = 0;
 
-  createTimeBuffer(): Buffer {
+  reset() {
+    this.sequence = 0;
+  }
+
+  static createTimeBuffer(): Buffer {
     const buf = Buffer.alloc(5);
     const now = new Date();
     buf.writeUInt8(now.getHours(), 0);
@@ -33,6 +37,13 @@ export class TelloPacketGenerator {
     return TelloPacket.of({
       command: Command.SetDateTime,
       payload: buf,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryVersion(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryVersion,
       sequence: this.sequence++,
     });
   }
@@ -65,7 +76,7 @@ export class TelloPacketGenerator {
     payload.writeUInt8((axes >> 24) & 0xFF, 3);
     payload.writeUInt8((axes >> 32) & 0xFF, 4);
     payload.writeUInt8((axes >> 40) & 0xFF, 5);
-    const time = this.createTimeBuffer();
+    const time = TelloPacketGenerator.createTimeBuffer();
     time.copy(payload, 6);
 
     return TelloPacket.of({
