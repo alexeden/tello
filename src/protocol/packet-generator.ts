@@ -29,6 +29,62 @@ export class TelloPacketGenerator {
     return connectionRequest;
   }
 
+  queryAttitude(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryAttitude,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryHeightLimit(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryHeightLimit,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryJpegQuality(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryJpegQuality,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryLowBattThresh(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryLowBattThresh,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryVersion(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryVersion,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryVideoBitrate(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryVideoBitrate,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryVideoSpsPps(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryVideoSpsPps,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryWifiRegion(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryWifiRegion,
+      sequence: this.sequence++,
+    });
+  }
+
   setDateTime(): Packet {
     const buf = Buffer.alloc(15);
     const now = new Date();
@@ -48,52 +104,13 @@ export class TelloPacketGenerator {
     });
   }
 
-  queryVersion(): Packet {
-    return TelloPacket.of({
-      command: Command.QueryVersion,
-      sequence: this.sequence++,
-    });
-  }
+  setExposureValue(exposure = 0): Packet {
+    const payload = Buffer.of(exposure);
 
-  queryVideoSpsPps(): Packet {
     return TelloPacket.of({
-      command: Command.QueryVideoSpsPps,
+      command: Command.SetExposureVals,
       sequence: this.sequence++,
-    });
-  }
-
-  queryWifiRegion(): Packet {
-    return TelloPacket.of({
-      command: Command.QueryWifiRegion,
-      sequence: this.sequence++,
-    });
-  }
-
-  queryVideoBitrate(): Packet {
-    return TelloPacket.of({
-      command: Command.QueryVideoBitrate,
-      sequence: this.sequence++,
-    });
-  }
-
-  queryHeightLimit(): Packet {
-    return TelloPacket.of({
-      command: Command.QueryHeightLimit,
-      sequence: this.sequence++,
-    });
-  }
-
-  queryLowBattThresh(): Packet {
-    return TelloPacket.of({
-      command: Command.QueryLowBattThresh,
-      sequence: this.sequence++,
-    });
-  }
-
-  queryAttitude(): Packet {
-    return TelloPacket.of({
-      command: Command.QueryAttitude,
-      sequence: this.sequence++,
+      payload,
     });
   }
 
@@ -122,6 +139,30 @@ export class TelloPacketGenerator {
 
     return TelloPacket.of({
       command: Command.SetStick,
+      sequence: this.sequence++,
+      payload,
+    });
+  }
+
+  setVideoBitrate(rate: 0 | 1 | 2 | 3 | 4 | 5 = 0): Packet {
+    const payload = Buffer.of(rate);
+
+    return TelloPacket.of({
+      command: Command.SetVideoBitrate,
+      sequence: this.sequence++,
+      payload,
+    });
+  }
+
+  /**
+   * mode = 0: picture
+   * mode = 1: video
+   */
+  switchPicVid(mode: 0 | 1 = 1): Packet {
+    const payload = Buffer.of(mode);
+
+    return TelloPacket.of({
+      command: Command.SwitchPicVid,
       sequence: this.sequence++,
       payload,
     });

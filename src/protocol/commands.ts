@@ -25,7 +25,7 @@ export enum Command {
   QuerySsidPass = 0x13, // 19
   QueryWifiRegion = 0x15, // 21
   QueryVideoBitrate = 0x28, // 40
-  ExposureVals = 0x34, // 52
+  SetExposureVals = 0x34, // 52
   QueryVersion = 0x45, // 69
   QueryActivationTime = 0x47, // 71
   QueryLoaderVersion = 0x49, // 73
@@ -86,7 +86,7 @@ export const getCommandType = (cmd: Command): Type => {
       return Type.Extended;
     case Command.DoPalmLand:
     case Command.DoThrowTakeoff:
-    case Command.ExposureVals:
+    case Command.SetExposureVals:
     case Command.FileDone:
     case Command.HandleImuAngle:
     case Command.QueryActivationTime:
