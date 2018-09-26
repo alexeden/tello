@@ -6,9 +6,6 @@ import { Command } from './commands';
 export class TelloPacketGenerator {
   private sequence = 0;
 
-  reset() {
-    this.sequence = 0;
-  }
 
   static createTimeBuffer(): Buffer {
     const buf = Buffer.alloc(5);
@@ -20,6 +17,16 @@ export class TelloPacketGenerator {
     buf.writeUInt8(ms & 0xff, 3);
     buf.writeUInt8(ms >> 8, 4);
     return buf;
+  }
+
+  reset() {
+    this.sequence = 0;
+  }
+
+  createConnectionRequest(port: number) {
+    const connectionRequest = Buffer.from('conn_req:lh');
+    connectionRequest.writeUInt16LE(port, 9);
+    return connectionRequest;
   }
 
   setDateTime(): Packet {
@@ -55,6 +62,40 @@ export class TelloPacketGenerator {
     });
   }
 
+  queryWifiRegion(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryWifiRegion,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryVideoBitrate(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryVideoBitrate,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryHeightLimit(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryHeightLimit,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryLowBattThresh(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryLowBattThresh,
+      sequence: this.sequence++,
+    });
+  }
+
+  queryAttitude(): Packet {
+    return TelloPacket.of({
+      command: Command.QueryAttitude,
+      sequence: this.sequence++,
+    });
+  }
 
   setStick(stickVals: Partial<Stick> = {}): Packet {
     const leftX = (stickVals.leftX || 0 / 90) + 1024; // 660 to 1388

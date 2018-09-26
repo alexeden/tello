@@ -7,13 +7,6 @@ import {
 import { TelloPacketGenerator, TelloPacket, Packet } from './protocol';
 
 export class Tello {
-
-  static createConnectionRequest() {
-    const connectionRequest = Buffer.from('conn_req:lh');
-    connectionRequest.writeUInt16LE(TelloVideoClient.port, 9);
-    return connectionRequest;
-  }
-
   private readonly commandSocket: UdpSubject;
   private readonly videoSocket: UdpSubject;
   private readonly intervals: NodeJS.Timer[] = [];
@@ -31,7 +24,8 @@ export class Tello {
   }
 
   async start() {
-    const connectionRequestSent = await this.commandSocket.next(Tello.createConnectionRequest());
+    const connectionRequest = this.generator.createConnectionRequest(TelloVideoClient.port);
+    const connectionRequestSent = await this.commandSocket.next(connectionRequest);
 
     this.intervals.push(setInterval(
       () => this.sendPacket(this.generator.setStick()),
@@ -49,7 +43,11 @@ export class Tello {
     ));
 
     this.sendPacket(this.generator.queryVersion());
-
+    this.sendPacket(this.generator.queryWifiRegion());
+    this.sendPacket(this.generator.queryVideoBitrate());
+    this.sendPacket(this.generator.queryHeightLimit());
+    this.sendPacket(this.generator.queryLowBattThresh());
+    this.sendPacket(this.generator.queryAttitude());
   }
 
   stop() {
@@ -58,5 +56,6 @@ export class Tello {
     while (interval = this.intervals.shift()) {
       clearInterval(interval);
     }
+    this.generator.reset();
   }
 }
