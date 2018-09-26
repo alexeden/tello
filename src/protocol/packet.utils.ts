@@ -5,6 +5,10 @@ import { crc8, crc16 } from 'crc';
 
 export class TelloPacket {
 
+  static bufferIsPacket(buf: Buffer) {
+    return buf.readUInt8(0) === HEADER;
+  }
+
   static of(
     p: Partial<Packet> = {
       command: Command.QueryVersion,

@@ -1,3 +1,9 @@
+import {
+  map,
+  take,
+  tap,
+  filter,
+} from 'rxjs/operators';
 import { UdpSubject } from './utils';
 import {
   TelloCommandClient,
@@ -5,6 +11,7 @@ import {
   TelloVideoClient,
 } from './tello.constants';
 import { TelloPacketGenerator, TelloPacket, Packet } from './protocol';
+import { Observable } from 'rxjs';
 
 export class Tello {
   private readonly commandSocket: UdpSubject;
@@ -19,8 +26,18 @@ export class Tello {
     this.generator = new TelloPacketGenerator();
   }
 
-  get commandStream() {
-    return this.commandSocket.asObservable();
+  get packetStream(): Observable<Packet> {
+    return this.commandSocket.asObservable().pipe(
+      filter(TelloPacket.bufferIsPacket),
+      map(TelloPacket.fromBuffer)
+    );
+  }
+
+  get messageStream(): Observable<string> {
+    return this.commandSocket.asObservable().pipe(
+      filter(buf => !TelloPacket.bufferIsPacket(buf)),
+      map(buf => buf.toString())
+    );
   }
 
   get videoStream() {
@@ -28,13 +45,16 @@ export class Tello {
   }
 
   private async sendPacket(packet: Packet) {
-    return this.commandSocket.next(TelloPacket.toBuffer(packet));
+    const sent = this.commandSocket.next(TelloPacket.toBuffer(packet));
+    if (!sent) throw new Error(`Failed to send command with ID "${packet.command}"`);
+    return sent;
   }
 
   async start() {
     const connectionRequest = this.generator.createConnectionRequest(TelloVideoClient.port);
     await this.commandSocket.next(connectionRequest);
-
+    // await this.sendPacket(this.generator.setStick());
+    // await this.sendPacket(this.generator.setDateTime());
     this.intervals.push(setInterval(
       () => this.sendPacket(this.generator.setStick()),
       20
@@ -44,7 +64,7 @@ export class Tello {
       () => this.sendPacket(this.generator.setDateTime()),
       1000
     ));
-
+    // await this.sendPacket(this.generator.queryVideoSpsPps());
     this.intervals.push(setInterval(
       () => this.sendPacket(this.generator.queryVideoSpsPps()),
       1000

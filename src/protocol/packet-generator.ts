@@ -7,17 +7,17 @@ export class TelloPacketGenerator {
   private sequence = 0;
 
 
-  static createTimeBuffer(): Buffer {
-    const buf = Buffer.alloc(5);
-    const now = new Date();
-    buf.writeUInt8(now.getHours(), 0);
-    buf.writeUInt8(now.getMinutes(), 1);
-    buf.writeUInt8(now.getSeconds(), 2);
-    const ms = now.getMilliseconds();
-    buf.writeUInt8(ms & 0xff, 3);
-    buf.writeUInt8(ms >> 8, 4);
-    return buf;
-  }
+  // static createTimeBuffer(): Buffer {
+  //   const buf = Buffer.alloc(5);
+  //   const now = new Date();
+  //   buf.writeUInt8(now.getHours(), 0);
+  //   buf.writeUInt8(now.getMinutes(), 1);
+  //   buf.writeUInt8(now.getSeconds(), 2);
+  //   const ms = now.getMilliseconds();
+  //   buf.writeUInt8(ms & 0xff, 3);
+  //   buf.writeUInt8(ms >> 8, 4);
+  //   return buf;
+  // }
 
   reset() {
     this.sequence = 0;
@@ -26,6 +26,7 @@ export class TelloPacketGenerator {
   createConnectionRequest(port: number) {
     const connectionRequest = Buffer.from('conn_req:lh');
     connectionRequest.writeUInt16LE(port, 9);
+    this.sequence++;
     return connectionRequest;
   }
 
@@ -74,7 +75,7 @@ export class TelloPacketGenerator {
   queryVideoSpsPps(): Packet {
     return TelloPacket.of({
       command: Command.QueryVideoSpsPps,
-      sequence: this.sequence++,
+      sequence: 0,
     });
   }
 
@@ -89,7 +90,7 @@ export class TelloPacketGenerator {
     const buf = Buffer.alloc(15);
     const now = new Date();
     buf.writeUInt8(0x00, 0);
-    buf.writeUInt16LE(now.getFullYear(), 1);
+    buf.writeUInt16LE(now.getFullYear() - 1900, 1);
     buf.writeUInt16LE(now.getMonth(), 3);
     buf.writeUInt16LE(now.getDay(), 5);
     buf.writeUInt16LE(now.getHours(), 7);
@@ -134,12 +135,16 @@ export class TelloPacketGenerator {
     payload.writeUInt8((axes >> 24) & 0xFF, 3);
     payload.writeUInt8((axes >> 32) & 0xFF, 4);
     payload.writeUInt8((axes >> 40) & 0xFF, 5);
-    const time = TelloPacketGenerator.createTimeBuffer();
-    time.copy(payload, 6);
+
+    const now = new Date();
+    payload.writeUInt8(now.getHours(), 6);
+    payload.writeUInt8(now.getMinutes(), 7);
+    payload.writeUInt8(now.getSeconds(), 8);
+    payload.writeUInt16LE(now.getMilliseconds() * 1000 & 0xffff, 9);
 
     return TelloPacket.of({
       command: Command.SetStick,
-      sequence: this.sequence++,
+      sequence: 0,
       payload,
     });
   }
