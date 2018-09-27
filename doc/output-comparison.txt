@@ -6,8 +6,41 @@ RX "2":  <Buffer 63 6f 6e 6e 5f 61 63 6b 3a 95 17>
 RX "2":  <Buffer 63 6f 6e 6e 5f 61 63 6b 3a 95 17>
 
 TX "80" #0:  <Buffer cc | b0 00 | 7f | 60 | 50 00 | 00 00 00 00 00 00 0c 20 14 0d 39 | 10 09 | f7 73>
-TX "80" #0:  <Buffer cc | b0 00 | 7f | 60 | 50 00 | 00 00 00 0c 20 00 00 0c 15 02 17 | 60 b4 | c2 00>
+TX "80" #0:  <Buffer cc   b0 00   7f   60   50 00   00 00 00 00 00 00 0c 20 16 23 1a   a0 b5   b8 ed>
 
-cc
-b0 00
-38 60 50 00 00 00 00 0c 20 00 00 0c 14 19 14 78 45 41 45
+Stick payload
+|____0____|____1____|____2____|____3____|____4____|
+|  hour   |   min   |   sec   |        ms         |
+|   0c    |   20    |   14    |       0d 39       |
+
+nodetello TX "37" #0:  <Buffer cc 58 00 7c 60 25 00 00 00 6c 95>
+tello     TX "37" #0:  <Buffer cc 58 00 d3 60 25 00 00 00 99 38>
+
+
+nodetello TX "70" #178:  <Buffer cc d0 00 25 50 46 00 b2 00 00 76 00 08 00 03 00 14 00 0d 00 39 00 28 ef 60 87>
+tello     TX "70" #12:   <Buffer cc d0 00 cd 50 46 00 0c 00 00 76 00 08 00 03 00 14 00 19 00 15 00 40 fb d8 89>
+
+nodetello TX "69" #182:  <Buffer cc 58 00 7c 48 45 00 b6 00 87 58>
+tello     TX "69" #2:    <Buffer cc 58 00 d3 48 45 00 02 00 e6 5e>
+
+
+nodetello TX "21" #187:  <Buffer cc 58 00 7c 48 15 00 bb 00 e9 3d>
+tello     TX "21" #7:    <Buffer cc 58 00 d3 48 15 00 07 00 f4 0e>
+
+nodetello TX "52" #188:  <Buffer cc 60 00 27 48 34 00 bc 00 00 08 ee>
+tello     TX "52" #8:    <Buffer cc 60 00 82 48 34 00 08 00 00 f0 87>
+
+
+nodetello TX "32" #183:  <Buffer cc 58 00 7c 48 20 00 b7 00 ec b6>
+tello     TX "32" #10:   <Buffer cc 60 00 82 68 20 00 0a 00 00 66 24>
+
+
+tello     TX "49" #11:  <Buffer cc 60 00 82 68 31 00 0b 00 01 0a 27>
+
+
+nodetello TX "4185" #186:  <Buffer cc 58 00 7c 48 59 10 ba 00 27 20>
+tello     TX "4185" #6:    <Buffer cc 58 00 d3 48 59 10 06 00 e2 cb>
+
+
+nodetello TX "4176" #193:  <Buffer cc 70 00 cb 50 50 10 c1 00 00 bd 1e be c1>
+tello     TX "4176" #16:   <Buffer cc 58 00 d3 50 50 10 10 00 cf 35>
