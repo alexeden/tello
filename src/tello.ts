@@ -38,15 +38,6 @@ export class Tello {
 
   get packetStream(): Observable<Packet> {
     return this.commandSocket.asObservable().pipe(
-      tap(buf => {
-        if (TelloPacket.bufferIsPacket(buf)) {
-          const packet = TelloPacket.fromBuffer(buf);
-          console.log(`RX "${packet.command}" #${packet.sequence}: `, buf);
-        }
-        else {
-          console.log(`RX "2": `, buf);
-        }
-      }),
       filter(TelloPacket.bufferIsPacket),
       map(TelloPacket.fromBuffer)
     );

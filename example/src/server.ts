@@ -6,7 +6,6 @@ import * as ws from 'ws';
 import { config } from './webpack.config';
 import * as webpack from 'webpack';
 import * as webpackDevMiddleware from 'webpack-dev-middleware';
-import { error } from 'util';
 
 const app = express();
 const httpsPort = config.devServer.port as number;
