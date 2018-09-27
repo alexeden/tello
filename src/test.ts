@@ -23,23 +23,66 @@ const createTimestamp = () => {
   ].join('.');
 };
 
+// (async () => {
+//   const drone = new Tello();
+
+//   // const mediaPath = path.resolve(__dirname, '..', 'media');
+//   // const videoPath = path.join(mediaPath, `video.${createTimestamp()}.h264`);
+//   // const videoRecording = fs.createWriteStream(videoPath);
+//   // fs.symlinkSync(videoPath, path.join(mediaPath, 'latest'));
+
+//   // drone.videoStream.subscribe(videoRecording.write.bind(videoRecording));
+
+//   drone.flightStatus.pipe(tag('flight status', true)).subscribe();
+
+//   drone.start();
+// })();
+
+
 (async () => {
   const drone = new Tello();
-
-  // const mediaPath = path.resolve(__dirname, '..', 'media');
-  // const videoPath = path.join(mediaPath, `video.${createTimestamp()}.h264`);
-  // const videoRecording = fs.createWriteStream(videoPath);
-  // fs.symlinkSync(videoPath, path.join(mediaPath, 'latest'));
-
-  // drone.videoStream.subscribe(videoRecording.write.bind(videoRecording));
-
-  drone.flightStatus.pipe(tag('flight status', true)).subscribe();
-
+  const rawCommandPath = path.join(path.resolve(__dirname, '..', 'media'), `commands.${createTimestamp()}.txt`);
+  const rawCommandOutput = fs.createWriteStream(rawCommandPath);
+  drone.rawCommandStream.pipe(
+    filter(TelloPacket.bufferIsPacket),
+    map((buf, i) => {
+      const packet = TelloPacket.fromBuffer(buf);
+      const bufString = [...buf].map(val => `0x${leftpad(val.toString(16))}`).join(', ');
+      const index = leftpad(i, ' ', 6);
+      const commandId = leftpad(`"${packet.command}"`, ' ', 6);
+      const bufLength = leftpad(`(${buf.length})`, ' ', 8);
+      return `${index} ${commandId} ${bufLength}:\t [${bufString}]\n`;
+    })
+  )
+  .subscribe(rawCommandOutput.write.bind(rawCommandOutput));
   drone.start();
 })();
 
 /**
- * Use the below code for printing raw buffer data to a semi-readable text file
+ * Use the below code for printing raw buffer data from the command stream to a semi-readable text file
+ * (handy for command data analysis and verifying responses from the drone)
+ * (async () => {
+ *   const drone = new Tello();
+ *   const rawCommandPath = path.join(path.resolve(__dirname, '..', 'media'), `commands.${createTimestamp()}.txt`);
+ *   const rawCommandOutput = fs.createWriteStream(rawCommandPath);
+ *   drone.rawCommandStream.pipe(
+ *     filter(TelloPacket.bufferIsPacket),
+ *     map((buf, i) => {
+ *       const packet = TelloPacket.fromBuffer(buf);
+ *       const bufString = [...buf].map(val => `0x${leftpad(val.toString(16))}`).join(', ');
+ *       const index = leftpad(i, ' ', 6);
+ *       const commandId = leftpad(`"${packet.command}"`, ' ', 6);
+ *       const bufLength = leftpad(`(${buf.length})`, ' ', 8);
+ *       return `${index} ${commandId} ${bufLength}:\t [${bufString}]\n`;
+ *     })
+ *   )
+ *   .subscribe(rawCommandOutput.write.bind(rawCommandOutput));
+ *   drone.start();
+ * })();
+ */
+
+/**
+ * Use the below code for printing raw video buffer data to a semi-readable text file
  * (handy for frame analysis and understanding the video data patterns)
  * (async () => {
  *   const drone = new Tello();

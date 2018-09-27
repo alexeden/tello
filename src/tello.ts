@@ -36,6 +36,10 @@ export class Tello {
     });
   }
 
+  get rawCommandStream(): Observable<Buffer> {
+    return this.commandSocket.asObservable();
+  }
+
   get packetStream(): Observable<Packet> {
     return this.commandSocket.asObservable().pipe(
       filter(TelloPacket.bufferIsPacket),

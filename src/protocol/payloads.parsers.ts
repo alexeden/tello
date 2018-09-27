@@ -2,7 +2,6 @@ import { Status } from './payloads.types';
 import { Bitwise } from '../utils';
 
 export class TelloPayloadParsers {
-  // <Buffer cc 18 01 b9 88 56 00 32 01 00 00 00 00 00 00 00 00 00 00 00 00 52 00 00 07 10 00 01 00 00 00 00 00 e8 13>
   static parseFlightStatus(payload: Buffer) {
     const status: Partial<Status> = {};
     status.height = payload.readInt16LE(0);
@@ -24,6 +23,9 @@ export class TelloPayloadParsers {
     status.imuCalibrationState = payload.readInt8(11);
     status.batteryPercentage = payload.readInt8(12);
     status.droneFlyTimeLeft = payload.readInt16LE(13);
+
+    if (payload.length <= 15) return status;
+
     status.droneBatteryLeft = payload.readInt16LE(15);
 
     const hardwareFlags = Bitwise.bitreader(payload.readUInt8(17));
