@@ -1,33 +1,55 @@
+import * as fs from 'fs';
+import * as path from 'path';
 import {
   map,
   take,
   tap,
   filter,
 } from 'rxjs/operators';
+import {
+  repeat,
+} from 'ramda';
 import { Tello } from './tello';
 import { tag } from './utils';
 import { TelloPacket } from './protocol';
 
-const seen = new Set<any>();
+const leftpad = (value: any, char: string | number = 0, w = 2) => repeat(char, 10).join('').concat(value).slice(-w);
+
+const createTimestamp = () => {
+  const d = new Date();
+  return [
+    [d.getFullYear(), leftpad(d.getMonth()), leftpad(d.getDate())].join('-'),
+    [leftpad(d.getHours()), leftpad(d.getMinutes()), leftpad(d.getSeconds())].join('-'),
+  ].join('.');
+};
 
 (async () => {
   const drone = new Tello();
-  // const commandStream =
-  drone.packetStream.pipe(
-    // tap(packet => seen.add(packet.command))
-    // tag('command')
-  )
-  .subscribe();
 
-  drone.messageStream.pipe(
-    // tap(packet => seen.add(packet.command))
-    // tag('message')
+  const videoPath = path.join(path.resolve(__dirname, '..', 'media'), `video.${createTimestamp()}.h264`);
+  const videoRecording = fs.createWriteStream(videoPath);
+  drone.videoStream.pipe(
+    map(frame => frame.slice(2))
   )
-  .subscribe();
-
-  // setInterval(() => console.log(Array.from(seen)), 1000);
+  .subscribe(videoRecording.write.bind(videoRecording));
 
   drone.start();
-
-
 })();
+
+/**
+ * Use the below code for printing raw buffer data to a semi-readable text file
+ * (handy for frame analysis and understanding the video data patterns)
+ * (async () => {
+ *   const drone = new Tello();
+ *   const rawVideoPath = path.join(path.resolve(__dirname, '..', 'media'), `raw.${createTimestamp()}.txt`);
+ *   const rawVideoOutput = fs.createWriteStream(rawVideoPath);
+ *   drone.rawVideoStream.pipe(
+ *     map((frame, i) => {
+ *       const frameString = [...frame].slice(0, 20).map(val => `0x${leftpad(val.toString(16))}`).join(', ');
+ *       return `${leftpad(i, ' ', 6)} (${leftpad(frame.length, ' ', 6)}):\t [${frameString}]\n`;
+ *     })
+ *   )
+ *   .subscribe(rawVideoOutput.write.bind(rawVideoOutput));
+ *   drone.start();
+ * })();
+ */
