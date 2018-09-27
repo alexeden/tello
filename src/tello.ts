@@ -11,12 +11,13 @@ import {
   TelloVideoClient,
 } from './tello.constants';
 import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 
 export class Tello {
   private readonly commandSocket: UdpSubject;
   private readonly videoSocket: UdpSubject;
   private readonly intervals: NodeJS.Timer[] = [];
+  private readonly connected = new BehaviorSubject(false);
 
   readonly generator: TelloPacketGenerator;
 
@@ -28,7 +29,7 @@ export class Tello {
     this.packetStream.subscribe(packet => {
       switch (packet.command) {
         case Command.LogHeader:
-          this.sendPacket(this.generator.logHeader());
+          this.send(this.generator.logHeader());
       }
     });
   }
@@ -60,60 +61,61 @@ export class Tello {
     return this.videoSocket.asObservable();
   }
 
-  private async sendPacket(packet: Packet) {
-    const packetBuffer = TelloPacket.toBuffer(packet);
-    console.log(`TX "${packet.command}" #${packet.sequence}: `, packetBuffer);
+  get rawVideoStream() {
+    return this.videoSocket.asObservable();
+  }
 
-    const sent = this.commandSocket.next(packetBuffer);
-    if (!sent) throw new Error(`Failed to send command with ID "${packet.command}"`);
+  private async send(message: Packet | Buffer) {
+    const buffer = message instanceof Buffer ? message : TelloPacket.toBuffer(message);
+    // console.log(`TX "${packet.command}" #${packet.sequence}: `, packetBuffer);
+    const sent = await this.commandSocket.next(buffer);
+    if (!sent) {
+      throw new Error(`Failed to send command with ID "${message instanceof Buffer ? message : message.command}"`);
+    }
     return sent;
   }
 
   async start() {
     const connectionRequest = this.generator.createConnectionRequest(TelloVideoClient.port);
     const connected = new Promise((ok, err) => {
-      this.messageStream.subscribe(msg => {
-        msg.write('conn_req:');
-        if (msg.toString() === connectionRequest.toString()) {
-          ok();
-        }
-        else {
-          console.log('Video port mismatch!!!', connectionRequest, msg);
-          err('Video port mismatch');
-        }
-      });
+      this.messageStream.subscribe(msg =>
+        msg.slice(-2).toString() === connectionRequest.slice(-2).toString()
+          ? ok()
+          : err('Video port mismatch')
+      );
     });
 
-    await this.commandSocket.next(connectionRequest);
+    await this.send(connectionRequest);
     console.log('connection request sent');
     await connected;
+
     await this.generator.setDateTime();
-    console.log('connected!');
+
     this.intervals.push(setInterval(
-      () => this.sendPacket(this.generator.setStick()),
+      () => this.send(this.generator.setStick()),
       20
     ));
 
     this.intervals.push(setInterval(
-      () => this.sendPacket(this.generator.setDateTime()),
+      () => this.send(this.generator.setDateTime()),
       1000
     ));
 
     this.intervals.push(setInterval(
-      () => this.sendPacket(this.generator.queryVideoSpsPps()),
+      () => this.send(this.generator.queryVideoSpsPps()),
       1000
     ));
 
-    await this.sendPacket(this.generator.queryVersion());       /* 69 */
-    await this.sendPacket(this.generator.queryVideoBitrate());  /* 40 */
-    await this.sendPacket(this.generator.queryHeightLimit());   /* 4182 */
-    await this.sendPacket(this.generator.queryLowBattThresh()); /* 4183 */
-    await this.sendPacket(this.generator.queryAttitude());      /* 4185 */
-    await this.sendPacket(this.generator.queryWifiRegion());    /* 21 */
-    await this.sendPacket(this.generator.setExposureValue());   /* 52 */
-    await this.sendPacket(this.generator.queryJpegQuality());   /* 55 */
-    await this.sendPacket(this.generator.setVideoBitrate());    /* 32 */
-    await this.sendPacket(this.generator.switchPicVid());       /* 49 */
+    await this.send(this.generator.queryVersion());       /* 69 */
+    await this.send(this.generator.queryVideoBitrate());  /* 40 */
+    await this.send(this.generator.queryHeightLimit());   /* 4182 */
+    await this.send(this.generator.queryLowBattThresh()); /* 4183 */
+    await this.send(this.generator.queryAttitude());      /* 4185 */
+    await this.send(this.generator.queryWifiRegion());    /* 21 */
+    await this.send(this.generator.setExposureValue());   /* 52 */
+    await this.send(this.generator.queryJpegQuality());   /* 55 */
+    await this.send(this.generator.setVideoBitrate());    /* 32 */
+    await this.send(this.generator.switchPicVid(1));      /* 49 */
   }
 
   stop() {

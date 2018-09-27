@@ -132,17 +132,15 @@ export class TelloPacketGenerator {
     axes |= (rightY & 0x07ff) << 11;
     axes |= (leftY & 0x07ff) << 22;
     axes |= (leftX & 0x07ff) << 33;
-    if (stickVals.fastMode) {
-      axes |= 1 << 44;
-    }
+    axes |= (~~stickVals.fastMode!) << 44;
+
+    const stickBuf = Buffer.alloc(8);
+    stickBuf.writeUInt32BE(axes >> 8, 0); // write the high order bits (shifted over)
+    stickBuf.writeUInt32BE(axes & 0x00ff, 4); // write the low order bits
+    stickBuf.swap64();	// BE to LE
 
     const payload = Buffer.alloc(11);
-    payload.writeUInt8(axes & 0xFF, 0);
-    payload.writeUInt8((axes >> 8) & 0xFF, 1);
-    payload.writeUInt8((axes >> 16) & 0xFF, 2);
-    payload.writeUInt8((axes >> 24) & 0xFF, 3);
-    payload.writeUInt8((axes >> 32) & 0xFF, 4);
-    payload.writeUInt8((axes >> 40) & 0xFF, 5);
+    payload.write(stickBuf.slice(0, 6).toString(), 0);
 
     const now = new Date();
     payload.writeUInt8(now.getHours(), 6);
