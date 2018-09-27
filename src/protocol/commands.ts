@@ -1,17 +1,8 @@
-// TODO: What type are these?
-//   DoConnect           = 0x0001, // 1``
-//   Connected           = 0x0002, // 2
-
-export enum Type {
-  Extended = 0, // 0x8X ???
-  Get      = 1, // 0x48
-  DataOne  = 2, // 0x50
-  DataTwo  = 4, // 0x60
-  Set      = 5, // 0x68
-  Flip     = 6, // 0x70
-}
-
 export enum Command {
+  // TODO: What type are these?
+  DoConnect           = 0x0001,
+  Connected           = 0x0002,
+
   // Type 0 - Extended
   WifiStrength = 0x1A, // 26
   LightStrength = 0x35, // 53
@@ -29,11 +20,9 @@ export enum Command {
   QueryVersion = 0x45, // 69
   QueryActivationTime = 0x47, // 71
   QueryLoaderVersion = 0x49, // 73
-  // TODO... what's this?
   HandleImuAngle = 0x5A, // 90
   DoThrowTakeoff = 0x5D, // 93
   DoPalmLand = 0x5E, // 94
-  // get or set?
   FileDone = 0x64, // 100
   QueryHeightLimit = 0x1056, // 4182
   QueryLowBattThresh = 0x1057, // 4183
@@ -74,64 +63,3 @@ export enum Command {
   // Type 6 - Flip
   DoFlip = 0x5C, // 92
 }
-
-export const getCommandType = (cmd: Command): Type => {
-  switch (cmd) {
-    case Command.Error1:
-    case Command.Error2:
-    case Command.FlightStatus:
-    case Command.LightStrength:
-    case Command.LogDataWrite:
-    case Command.WifiStrength:
-      return Type.Extended;
-    case Command.DoPalmLand:
-    case Command.DoThrowTakeoff:
-    case Command.SetExposureVals:
-    case Command.FileDone:
-    case Command.HandleImuAngle:
-    case Command.QueryActivationTime:
-    case Command.QueryAttitude:
-    case Command.QueryHeightLimit:
-    case Command.QueryLoaderVersion:
-    case Command.QueryLowBattThresh:
-    case Command.QuerySsid:
-    case Command.QuerySsidPass:
-    case Command.QueryVersion:
-    case Command.QueryVideoBitrate:
-    case Command.QueryWifiRegion:
-      return Type.Get;
-    case Command.FileData:
-    case Command.FileSize:
-    case Command.LogConfig:
-    case Command.LogHeader:
-    case Command.SetDateTime:
-    case Command.SmartVideoStatus:
-      return Type.DataOne;
-    case Command.QueryVideoSpsPps:
-    case Command.SetStick:
-      return Type.DataTwo;
-    case Command.DoBounce:
-    case Command.DoCalibration:
-    case Command.DoLand:
-    case Command.DoSmartVideo:
-    case Command.DoStartRecording:
-    case Command.DoTakeoff:
-    case Command.DoTakePic:
-    case Command.EisSetting:
-    case Command.QueryJpegQuality:
-    case Command.SetAttitude:
-    case Command.SetDynAdjRate:
-    case Command.SetHeightLimit:
-    case Command.SetLowBattThresh:
-    case Command.SetSsid:
-    case Command.SetSsidPass:
-    case Command.SetVideoBitrate:
-    case Command.SetWifiRegion:
-    case Command.SwitchPicVid:
-      return Type.Set;
-    case Command.DoFlip:
-      return Type.Flip;
-    default:
-      throw new Error(`Unknown command "${cmd}", can't get command type.`);
-  }
-};

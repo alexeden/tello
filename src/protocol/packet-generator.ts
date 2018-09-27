@@ -1,23 +1,10 @@
-import { Stick } from './payloads.types';
+import { Stick, VideoMode, VideoBitrate, Exposure } from './payloads.types';
 import { Packet } from './packet.types';
 import { TelloPacket } from './packet.utils';
 import { Command } from './commands';
 
 export class TelloPacketGenerator {
   private sequence = 0;
-
-
-  // static createTimeBuffer(): Buffer {
-  //   const buf = Buffer.alloc(5);
-  //   const now = new Date();
-  //   buf.writeUInt8(now.getHours(), 0);
-  //   buf.writeUInt8(now.getMinutes(), 1);
-  //   buf.writeUInt8(now.getSeconds(), 2);
-  //   const ms = now.getMilliseconds();
-  //   buf.writeUInt8(ms & 0xff, 3);
-  //   buf.writeUInt8(ms >> 8, 4);
-  //   return buf;
-  // }
 
   reset() {
     this.sequence = 0;
@@ -113,7 +100,7 @@ export class TelloPacketGenerator {
     });
   }
 
-  setExposureValue(exposure = 0): Packet {
+  setExposureValue(exposure: Exposure = Exposure.Zero): Packet {
     const payload = Buffer.of(exposure);
 
     return TelloPacket.of({
@@ -155,7 +142,7 @@ export class TelloPacketGenerator {
     });
   }
 
-  setVideoBitrate(rate: 0 | 1 | 2 | 3 | 4 | 5 = 0): Packet {
+  setVideoBitrate(rate: VideoBitrate = VideoBitrate.Auto): Packet {
     const payload = Buffer.of(rate);
 
     return TelloPacket.of({
@@ -165,11 +152,7 @@ export class TelloPacketGenerator {
     });
   }
 
-  /**
-   * mode = 0: picture
-   * mode = 1: video
-   */
-  switchPicVid(mode: 0 | 1 = 1): Packet {
+  switchPicVid(mode: VideoMode = VideoMode.Video): Packet {
     const payload = Buffer.of(mode);
 
     return TelloPacket.of({
