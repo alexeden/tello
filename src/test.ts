@@ -14,21 +14,20 @@ const seen = new Set<any>();
   const drone = new Tello();
   // const commandStream =
   drone.packetStream.pipe(
-    tap(packet => seen.add(packet.command))
+    // tap(packet => seen.add(packet.command))
     // tag('command')
   )
   .subscribe();
 
   drone.messageStream.pipe(
     // tap(packet => seen.add(packet.command))
-    tag('message')
+    // tag('message')
   )
   .subscribe();
 
-  setInterval(() => console.log(Array.from(seen)), 1000);
+  // setInterval(() => console.log(Array.from(seen)), 1000);
 
-  const started = await drone.start();
+  drone.start();
 
-  console.log(`started? ${started}`);
 
 })();

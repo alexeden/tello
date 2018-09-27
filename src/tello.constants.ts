@@ -10,7 +10,8 @@ export const TelloStateClient = {
 
 export const TelloVideoClient = {
   address: '0.0.0.0',
-  port: 6038,
+  port: 6037,
+  // port: 7777,
 };
 
 export const TelloCommandServer = {

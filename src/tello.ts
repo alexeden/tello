@@ -10,7 +10,7 @@ import {
   TelloCommandServer,
   TelloVideoClient,
 } from './tello.constants';
-import { TelloPacketGenerator, TelloPacket, Packet } from './protocol';
+import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
 import { Observable } from 'rxjs';
 
 export class Tello {
@@ -24,19 +24,35 @@ export class Tello {
     this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer).start();
     this.videoSocket = UdpSubject.create(TelloVideoClient).start();
     this.generator = new TelloPacketGenerator();
+
+    this.packetStream.subscribe(packet => {
+      switch (packet.command) {
+        case Command.LogHeader:
+          this.sendPacket(this.generator.logHeader());
+      }
+    });
   }
 
   get packetStream(): Observable<Packet> {
     return this.commandSocket.asObservable().pipe(
+      tap(buf => {
+        if (TelloPacket.bufferIsPacket(buf)) {
+          const packet = TelloPacket.fromBuffer(buf);
+          console.log(`RX "${packet.command}" #${packet.sequence}: `, buf);
+        }
+        else {
+          console.log(`RX "2": `, buf);
+        }
+      }),
       filter(TelloPacket.bufferIsPacket),
       map(TelloPacket.fromBuffer)
     );
   }
 
-  get messageStream(): Observable<string> {
+  get messageStream(): Observable<Buffer> {
     return this.commandSocket.asObservable().pipe(
-      filter(buf => !TelloPacket.bufferIsPacket(buf)),
-      map(buf => buf.toString())
+      filter(buf => !TelloPacket.bufferIsPacket(buf))
+      // map(buf => buf.toString())
     );
   }
 
@@ -45,16 +61,37 @@ export class Tello {
   }
 
   private async sendPacket(packet: Packet) {
-    const sent = this.commandSocket.next(TelloPacket.toBuffer(packet));
+    const packetBuffer = TelloPacket.toBuffer(packet);
+    console.log(`TX "${packet.command}" #${packet.sequence}: `, packetBuffer);
+
+    const sent = this.commandSocket.next(packetBuffer);
     if (!sent) throw new Error(`Failed to send command with ID "${packet.command}"`);
     return sent;
   }
 
   async start() {
     const connectionRequest = this.generator.createConnectionRequest(TelloVideoClient.port);
+    const connected = new Promise((ok, err) => {
+      this.messageStream.subscribe(msg => {
+        msg.write('conn_req:');
+        if (msg.toString() === connectionRequest.toString()) {
+          ok();
+        }
+        else {
+          console.log('Video port mismatch!!!', connectionRequest, msg);
+          err('Video port mismatch');
+        }
+      });
+    });
+
     await this.commandSocket.next(connectionRequest);
+    console.log('connection request sent');
+    await connected;
+    await this.generator.setDateTime();
+    console.log('connected!');
     // await this.sendPacket(this.generator.setStick());
     // await this.sendPacket(this.generator.setDateTime());
+    // await this.sendPacket(this.generator.queryVideoSpsPps());
     this.intervals.push(setInterval(
       () => this.sendPacket(this.generator.setStick()),
       20
@@ -64,7 +101,7 @@ export class Tello {
       () => this.sendPacket(this.generator.setDateTime()),
       1000
     ));
-    // await this.sendPacket(this.generator.queryVideoSpsPps());
+
     this.intervals.push(setInterval(
       () => this.sendPacket(this.generator.queryVideoSpsPps()),
       1000

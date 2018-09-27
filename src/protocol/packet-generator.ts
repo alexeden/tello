@@ -24,10 +24,18 @@ export class TelloPacketGenerator {
   }
 
   createConnectionRequest(port: number) {
-    const connectionRequest = Buffer.from('conn_req:lh');
+    const connectionRequest = Buffer.alloc(11);
+    connectionRequest.write('conn_req:');
     connectionRequest.writeUInt16LE(port, 9);
     this.sequence++;
     return connectionRequest;
+  }
+
+  logHeader(): Packet {
+    return TelloPacket.of({
+      command: Command.LogHeader,
+      sequence: this.sequence++,
+    });
   }
 
   queryAttitude(): Packet {
