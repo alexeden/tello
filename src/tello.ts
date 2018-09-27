@@ -1,8 +1,10 @@
+import { Observable, BehaviorSubject } from 'rxjs';
 import {
   map,
   take,
   tap,
   filter,
+  skipWhile,
 } from 'rxjs/operators';
 import { UdpSubject } from './utils';
 import {
@@ -11,7 +13,7 @@ import {
   TelloVideoClient,
 } from './tello.constants';
 import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { TelloVideoUtils } from './video';
 
 export class Tello {
   private readonly commandSocket: UdpSubject;
@@ -53,12 +55,14 @@ export class Tello {
   get messageStream(): Observable<Buffer> {
     return this.commandSocket.asObservable().pipe(
       filter(buf => !TelloPacket.bufferIsPacket(buf))
-      // map(buf => buf.toString())
     );
   }
 
   get videoStream() {
-    return this.videoSocket.asObservable();
+    return this.videoSocket.asObservable().pipe(
+      skipWhile(buf => !TelloVideoUtils.isKeyframe(buf)),
+      map(frame => frame.slice(2))
+    );
   }
 
   get rawVideoStream() {
