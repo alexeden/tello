@@ -21,6 +21,7 @@ import {
   TelloCommandServer,
   TelloStateClient,
   TelloVideoClient,
+  Tello,
   TelloPacket, Type, Command, Packet,
   UdpSubject, tag,
 } from '../../dist';
@@ -28,5 +29,10 @@ import {
 
 (async () => {
 
+  const drone = new Tello();
+  drone.packetStream.subscribe(
+    packet => broadcast(JSON.stringify(packet))
+  );
 
+  drone.start();
 })();
