@@ -12,7 +12,7 @@ import {
   TelloCommandServer,
   TelloVideoClient,
 } from './tello.constants';
-import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
+import { TelloPacketGenerator, TelloPacket, Packet, Command, TelloPayloadParsers } from './protocol';
 import { TelloVideoUtils } from './video';
 
 export class Tello {
@@ -58,6 +58,13 @@ export class Tello {
 
   get rawVideoStream() {
     return this.videoSocket.asObservable();
+  }
+
+  get flightStatus() {
+    return this.packetStream.pipe(
+      filter(packet => packet.command === Command.FlightStatus),
+      map(({ payload }) => TelloPayloadParsers.parseFlightStatus(payload))
+    );
   }
 
   private async send(message: Packet | Buffer) {
