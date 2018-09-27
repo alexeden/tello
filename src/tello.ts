@@ -89,9 +89,6 @@ export class Tello {
     await connected;
     await this.generator.setDateTime();
     console.log('connected!');
-    // await this.sendPacket(this.generator.setStick());
-    // await this.sendPacket(this.generator.setDateTime());
-    // await this.sendPacket(this.generator.queryVideoSpsPps());
     this.intervals.push(setInterval(
       () => this.sendPacket(this.generator.setStick()),
       20

@@ -19,7 +19,6 @@
   "dependencies": {
     "backoff-rxjs": "0.0.10",
     "chalk": "^2.4.1",
-    "crc": "^3.8.0",
     "ramda": "^0.25.0",
     "rxjs": "6.3.2"
   },

@@ -1,7 +1,8 @@
 import { Packet, Sender, Offset } from './packet.types';
 import { MIN_PACKET_SIZE, HEADER } from './packet.constants';
 import { Command, getCommandType } from './commands';
-import { crc8, crc16 } from 'crc';
+import { crc16 } from 'crc';
+import { calcCRC8, calcCRC16 } from '../utils/crc';
 
 export class TelloPacket {
 
@@ -45,12 +46,12 @@ export class TelloPacket {
     const buf = Buffer.allocUnsafe(n);
     buf.writeUInt8(HEADER, Offset.Header);
     buf.writeUInt16LE(n << 3, Offset.Size);
-    buf.writeUInt8(crc8(buf.slice(0, 3)), Offset.Crc8);
+    buf.writeUInt8(calcCRC8(buf.slice(0, 3)), Offset.Crc8);
     buf.writeUInt8(p.sender | (p.type << 3), Offset.Type);
     buf.writeUInt16LE(p.command, Offset.Command);
     buf.writeUInt16LE(p.sequence, Offset.Sequence);
     payload.copy(buf, Offset.Payload);
-    const c16 = crc16(buf.slice(0, 9 + payload.length));
+    const c16 = calcCRC16(buf.slice(0, 9 + payload.length));
     buf.writeUInt16LE(c16, Offset.Crc16 + payload.length - 1);
     return buf;
   }
