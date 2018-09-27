@@ -26,14 +26,16 @@ const createTimestamp = () => {
 (async () => {
   const drone = new Tello();
 
-  const videoPath = path.join(path.resolve(__dirname, '..', 'media'), `video.${createTimestamp()}.h264`);
+  const mediaPath = path.resolve(__dirname, '..', 'media');
+  const videoPath = path.join(mediaPath, `video.${createTimestamp()}.h264`);
   const videoRecording = fs.createWriteStream(videoPath);
-  drone.videoStream.pipe(
-    map(frame => frame.slice(2))
-  )
-  .subscribe(videoRecording.write.bind(videoRecording));
+  fs.symlinkSync(videoPath, path.join(mediaPath, 'latest'));
+  // drone.videoStream.pipe(
+  //   map(frame => frame.slice(2))
+  // )
+  // .subscribe(videoRecording.write.bind(videoRecording));
 
-  drone.start();
+  // drone.start();
 })();
 
 /**
