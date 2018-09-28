@@ -1,55 +1,55 @@
 import { Exposure, VideoBitrate, CameraMode, Stick } from '../lib';
 import { Status, Wifi } from './state.types';
 import { Bitwise } from '../utils';
-import { Command } from '../protocol';
+import { Command } from 'protocol';
 
 
-export const TelloPayloadParsers = {
+export class PayloadParsers {
   // Commmand 21
-  [Command.QueryWifiRegion]: (payload: Buffer): string => {
+  static parseWifiRegion(payload: Buffer): string {
     return payload.toString();
-  },
+  }
 
   // Command 26
-  [Command.WifiStrength]: (payload: Buffer): Partial<Wifi> => {
+  static parseWifiStrength(payload: Buffer): Partial<Wifi> {
     return {
       signal: payload.readUInt8(0),
       interference: payload.readUInt8(1),
     };
-  },
+  }
 
   // Command 32
-  [Command.SetVideoBitrate]: (payload: Buffer): VideoBitrate => {
+  static parseVideoBitrate(payload: Buffer): VideoBitrate {
     return payload.readUInt8(0);
-  },
+  }
 
   // Command 49
-  [Command.SetCameraMode]: (payload: Buffer): CameraMode => {
+  static parseCameraMode(payload: Buffer): CameraMode {
     return payload.readUInt8(0);
-  },
+  }
 
   // Command 52
-  [Command.SetExposureValues]: (payload: Buffer): Exposure => {
+  static parseExposureValue(payload: Buffer): Exposure {
     return payload.readInt8(0);
-  },
+  }
 
   // Command 53
-  [Command.LightStrength]: (payload: Buffer): number => {
+  static parseLightStrength(payload: Buffer): number {
     return payload.readUInt8(0);
-  },
+  }
 
   // Command 55
-  [Command.QueryJpegQuality]: (payload: Buffer): number => {
+  static parseJpegQuality(payload: Buffer): number {
     return payload.readInt8(0);
-  },
+  }
 
   // Command 69
-  [Command.QueryVersion]: (payload: Buffer): string => {
+  static parseVersion(payload: Buffer): string {
     return payload.toString();
-  },
+  }
 
   // Command 86
-  [Command.FlightStatus]: (payload: Buffer): Partial<Status> => {
+  static parseFlightStatus(payload: Buffer): Partial<Status> {
     const status: Partial<Status> = {};
     status.height = payload.readInt16LE(0);
     status.northSpeed = payload.readInt16LE(2);
@@ -97,19 +97,19 @@ export const TelloPayloadParsers = {
     status.temperatureHeight = payload.readUInt8(23);
 
     return status;
-  },
+  }
 
   // Command 4182
-  [Command.QueryHeightLimit]: (payload: Buffer) => {
+  static parseHeightLimit(payload: Buffer) {
     return payload.readUInt16LE(1);
-  },
+  }
   // Command 4183
-  [Command.QueryLowBattThresh]: (payload: Buffer) => {
+  static parseLowBatteryThreshold(payload: Buffer) {
     return payload.readUInt16LE(1);
-  },
+  }
 
   // Command 4185
-  [Command.QueryAttitude]: (payload: Buffer): Stick => {
+  static parseStick(payload: Buffer): Stick {
     return {
       fastMode: false,
       rightX: payload.readUInt8(0),
@@ -117,5 +117,5 @@ export const TelloPayloadParsers = {
       leftX: payload.readUInt8(2),
       leftY: payload.readUInt8(3),
     };
-  },
-};
+  }
+}

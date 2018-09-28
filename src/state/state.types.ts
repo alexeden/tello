@@ -14,6 +14,11 @@ export interface Wifi {
   interference: number;
 }
 
+export interface TelloState {
+  battery: Partial<Battery>;
+  wifi: Partial<Wifi>;
+}
+
 export interface Status {
   flyMode: number;
   height: number;
