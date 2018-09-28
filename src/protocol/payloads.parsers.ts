@@ -3,7 +3,7 @@ import { Bitwise } from '../utils';
 
 export class TelloPayloadParsers {
   // Commmand 21
-  static parseWifiRegion(payload: Buffer) {
+  static parseWifiRegion(payload: Buffer): string {
     return payload.toString();
   }
 

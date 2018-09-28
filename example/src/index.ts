@@ -19,7 +19,6 @@ import {
 import {
   TelloCommandClient,
   TelloCommandServer,
-  TelloStateClient,
   TelloVideoClient,
   Tello,
   TelloPacket, Type, Command, Packet,
