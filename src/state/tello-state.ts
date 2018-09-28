@@ -13,8 +13,9 @@ export class TelloStateManager {
 
   constructor() {
     const init: TelloState = {
-      wifi: {},
       battery: {},
+      status: {},
+      wifi: {},
     };
 
     this.state = this.updates.asObservable().pipe(
