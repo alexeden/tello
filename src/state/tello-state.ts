@@ -14,7 +14,9 @@ export class TelloStateManager {
   constructor() {
     const init: TelloState = {
       battery: {},
-      status: {},
+      flight: {},
+      sensorFlags: {},
+      speed: {},
       wifi: {},
     };
 
@@ -29,10 +31,6 @@ export class TelloStateManager {
 
 
   parseAndUpdate({ command, payload }: Packet) {
-    if (!(command in PayloadParsers)) {
-      return false;
-    }
-
     switch (command) {
       case Command.QueryWifiRegion:
         const region = PayloadParsers.parseWifiRegion(payload);
@@ -68,6 +66,19 @@ export class TelloStateManager {
       case Command.QueryVersion:
         break;
       case Command.FlightStatus:
+        const {
+          battery,
+          flight,
+          sensorFlags,
+          speed,
+        } = PayloadParsers.parseFlightStatus(payload);
+        this.updates.next(state => ({
+          ...state,
+          battery: { ...state.battery, ...battery },
+          flight: { ...state.flight, ...flight },
+          sensorFlags: { ...state.sensorFlags, ...sensorFlags },
+          speed: { ...state.speed, ...speed },
+        }));
         break;
       case Command.QueryHeightLimit:
         break;

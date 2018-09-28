@@ -65,7 +65,7 @@ export class TelloPacket {
         return Type.Extended;
       case Command.DoPalmLand:
       case Command.DoThrowTakeoff:
-      case Command.SetExposureVals:
+      case Command.SetExposureValues:
       case Command.FileDone:
       case Command.HandleImuAngle:
       case Command.QueryActivationTime:
@@ -106,7 +106,7 @@ export class TelloPacket {
       case Command.SetSsidPass:
       case Command.SetVideoBitrate:
       case Command.SetWifiRegion:
-      case Command.SwitchPicVid:
+      case Command.SetCameraMode:
         return Type.Set;
       case Command.DoFlip:
         return Type.Flip;

@@ -1,5 +1,5 @@
 import { Exposure, VideoBitrate, CameraMode, Stick } from '../lib';
-import { Status, Wifi, SensorFlags, Speed, Battery } from './state.types';
+import { Wifi, SensorFlags, Speed, Battery, Flight } from './state.types';
 import { Bitwise } from '../utils';
 import { Command } from 'protocol';
 
@@ -12,10 +12,21 @@ export class PayloadParsers {
 
   // Command 26
   static parseWifiStrength(payload: Buffer): Partial<Wifi> {
-    return {
-      signal: payload.readUInt8(0),
-      interference: payload.readUInt8(1),
-    };
+    console.log('payload: ', payload);
+    if (!payload.length) {
+      return {};
+    }
+    else if (payload.length > 1) {
+      return {
+        signal: payload.readUInt8(0),
+        interference: payload.readUInt8(1),
+      };
+    }
+    else {
+      return {
+        signal: payload.readUInt8(0),
+      };
+    }
   }
 
   // Command 32
@@ -49,7 +60,7 @@ export class PayloadParsers {
   }
 
   // Command 86
-  static parseFlightStatus(payload: Buffer): Status {
+  static parseFlightStatus(payload: Buffer) {
     const battery: Battery = {
       percentage: payload.readInt8(12),
       flyTimeLeft: payload.readInt16LE(13),
@@ -72,10 +83,14 @@ export class PayloadParsers {
       wind: sensorFlagByte(7),
     };
 
-    return {
+    const flight: Flight = {
       height: payload.readInt16LE(0),
       imuCalibration: payload.readInt8(11),
-      flightTime: payload.readInt16LE(8),
+      time: payload.readInt16LE(8),
+    };
+
+    return {
+      flight,
       speed,
       sensorFlags,
       battery,

@@ -14,6 +14,12 @@ export interface Wifi {
   interference: number;
 }
 
+export interface Flight {
+  imuCalibration: number;
+  height: number;
+  time: number;
+}
+
 export interface Speed {
   lateral: number;
   longitudinal: number;
@@ -31,18 +37,22 @@ export interface SensorFlags {
 }
 
 export interface TelloState {
-  battery: Partial<Battery>;
+  // battery: Partial<Battery>;
   wifi: Partial<Wifi>;
-  status: Status | {};
+  // status: Status | {};
+  flight: Flight | {};
+  sensorFlags: SensorFlags | {};
+  battery: Battery | {};
+  speed: Speed | {};
 }
 
-export interface Status {
-  sensorFlags: SensorFlags;
-  battery: Battery;
-  speed: Speed;
-  imuCalibration: number;
-  height: number;
-  flightTime: number;
+// export interface Status {
+  // sensorFlags: SensorFlags;
+  // battery: Battery;
+  // speed: Speed;
+  // imuCalibration: number;
+  // height: number;
+  // flightTime: number;
 
 
   // flyMode: number;
@@ -105,4 +115,4 @@ export interface Status {
   // quatY: number;
   // quatZ: number;
   // quatW: number;
-}
+// }

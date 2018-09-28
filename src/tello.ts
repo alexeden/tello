@@ -14,7 +14,7 @@ import {
   TelloVideoClient,
 } from './tello.constants';
 import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
-import { PayloadParsers } from './state';
+import { TelloStateManager, PayloadParsers, TelloState } from './state';
 import { TelloVideoUtils } from './video';
 
 export class Tello {
@@ -23,19 +23,26 @@ export class Tello {
   private readonly intervals: NodeJS.Timer[] = [];
   private readonly stopSignal = new Subject<any>();
   private readonly connected = new BehaviorSubject(false);
+  private readonly stateManager = new TelloStateManager();
 
   readonly generator: TelloPacketGenerator;
+  readonly stateStream: Observable<TelloState>;
 
   constructor() {
     this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer).start();
     this.videoSocket = UdpSubject.create(TelloVideoClient).start();
     this.generator = new TelloPacketGenerator();
+    this.stateStream = this.stateManager.state;
 
     this.packetStream.subscribe(packet => {
       switch (packet.command) {
         case Command.LogHeader:
           this.send(this.generator.logHeader());
       }
+    });
+
+    this.packetStream.subscribe(packet => {
+      this.stateManager.parseAndUpdate(packet);
     });
   }
 
@@ -86,7 +93,7 @@ export class Tello {
 
   private async send(message: Packet | Buffer) {
     const buffer = message instanceof Buffer ? message : TelloPacket.toBuffer(message);
-    // console.log(`TX "${packet.command}" #${packet.sequence}: `, packetBuffer);
+    // console.log(`TX `, message);
     const sent = await this.commandSocket.next(buffer);
     if (!sent) {
       throw new Error(`Failed to send command with ID "${message instanceof Buffer ? message : message.command}"`);
@@ -114,6 +121,11 @@ export class Tello {
     await this.send(connectionRequest);
     console.log('connection request sent');
     await connected;
+    console.log('connected!');
+    // this.intervals.push(setInterval(
+    //   () => this.send(this.generator.setStick()),
+    //   20
+    // ));
     this.sendOnInterval(20, () => this.generator.setStick());
     this.sendOnInterval(2000, () => this.generator.setDateTime());
     this.sendOnInterval(1000, () => this.generator.queryVideoSpsPps());
