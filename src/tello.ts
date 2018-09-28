@@ -80,7 +80,7 @@ export class Tello {
   get flightStatus() {
     return this.packetStream.pipe(
       filter(packet => packet.command === Command.FlightStatus),
-      map(({ payload }) => TelloPayloadParsers.parseFlightStatus(payload))
+      map(({ payload }) => TelloPayloadParsers[Command.FlightStatus](payload))
     );
   }
 

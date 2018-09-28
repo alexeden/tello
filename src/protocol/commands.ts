@@ -21,9 +21,9 @@ export enum Command {
   /* Type 4 */  QueryVideoSpsPps    = 0x25,   // 37
   /* Type 1 */  QueryVideoBitrate   = 0x28,   // 40
   /* Type 5 */  DoTakePic           = 0x30,   // 48
-  /* Type 5 */  SwitchPicVid        = 0x31,   // 49
+  /* Type 5 */  SetCameraMode       = 0x31,   // 49
   /* Type 5 */  DoStartRecording    = 0x32,   // 50
-  /* Type 1 */  SetExposureVals     = 0x34,   // 52
+  /* Type 1 */  SetExposureValues   = 0x34,   // 52
   /* Type 0 */  LightStrength       = 0x35,   // 53
   /* Type 5 */  QueryJpegQuality    = 0x37,   // 55
   /* Type 0 */  Error1              = 0x43,   // 67

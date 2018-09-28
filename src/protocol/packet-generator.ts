@@ -1,4 +1,4 @@
-import { Stick, CameraMode, VideoBitrate, Exposure } from './payloads.types';
+import { Stick, CameraMode, VideoBitrate, Exposure } from '../lib';
 import { Packet } from './packet.types';
 import { TelloPacket } from './packet.utils';
 import { Command } from './commands';
@@ -104,7 +104,7 @@ export class TelloPacketGenerator {
     const payload = Buffer.of(exposure);
 
     return TelloPacket.of({
-      command: Command.SetExposureVals,
+      command: Command.SetExposureValues,
       sequence: this.sequence++,
       payload,
     });
@@ -156,7 +156,7 @@ export class TelloPacketGenerator {
     const payload = Buffer.of(mode);
 
     return TelloPacket.of({
-      command: Command.SwitchPicVid,
+      command: Command.SetCameraMode,
       sequence: this.sequence++,
       payload,
     });
