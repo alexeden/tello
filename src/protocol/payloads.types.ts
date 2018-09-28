@@ -14,7 +14,7 @@ export interface Stick {
   rightY: number;
 }
 
-export enum VideoMode {
+export enum CameraMode {
   Picture = 0,
   Video = 1,
 }

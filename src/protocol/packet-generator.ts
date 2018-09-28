@@ -1,4 +1,4 @@
-import { Stick, VideoMode, VideoBitrate, Exposure } from './payloads.types';
+import { Stick, CameraMode, VideoBitrate, Exposure } from './payloads.types';
 import { Packet } from './packet.types';
 import { TelloPacket } from './packet.utils';
 import { Command } from './commands';
@@ -152,7 +152,7 @@ export class TelloPacketGenerator {
     });
   }
 
-  switchPicVid(mode: VideoMode = VideoMode.Video): Packet {
+  switchPicVid(mode: CameraMode = CameraMode.Video): Packet {
     const payload = Buffer.of(mode);
 
     return TelloPacket.of({

@@ -1,7 +1,51 @@
-import { Status } from './payloads.types';
+import { Status, Exposure, VideoBitrate, CameraMode, Stick, WifiStrength } from './payloads.types';
 import { Bitwise } from '../utils';
 
 export class TelloPayloadParsers {
+  // Commmand 21
+  static parseWifiRegion(payload: Buffer) {
+    return payload.toString();
+  }
+
+  // Command 26
+  static parseWifiStrength(payload: Buffer): WifiStrength {
+    return {
+      signal: payload.readUInt8(0),
+      interference: payload.readUInt8(1),
+    };
+  }
+
+  // Command 32
+  static parseVideoBitrate(payload: Buffer): VideoBitrate {
+    return payload.readUInt8(0);
+  }
+
+  // Command 49
+  static parseCameraMode(payload: Buffer): CameraMode {
+    return payload.readUInt8(0);
+  }
+
+  // Command 52
+  static parseExposureValue(payload: Buffer): Exposure {
+    return payload.readInt8(0);
+  }
+
+  // Command 53
+  static parseLightStrength(payload: Buffer) {
+    return payload.readUInt8(0);
+  }
+
+  // Command 55
+  static parseJpegQuality(payload: Buffer) {
+    return payload.readInt8(0);
+  }
+
+  // Command 69
+  static parseVersion(payload: Buffer) {
+    return payload.toString();
+  }
+
+  // Command 86
   static parseFlightStatus(payload: Buffer) {
     const status: Partial<Status> = {};
     status.height = payload.readInt16LE(0);
@@ -50,5 +94,25 @@ export class TelloPayloadParsers {
     status.temperatureHeight = payload.readUInt8(23);
 
     return status;
+  }
+
+  // Command 4182
+  static parseHeightLimit(payload: Buffer) {
+    return payload.readUInt16LE(1);
+  }
+  // Command 4183
+  static parseLowBatteryThreshold(payload: Buffer) {
+    return payload.readUInt16LE(1);
+  }
+
+  // Command 4185
+  static parseStick(payload: Buffer): Stick {
+    return {
+      fastMode: false,
+      rightX: payload.readUInt8(0),
+      rightY: payload.readUInt8(1),
+      leftX: payload.readUInt8(2),
+      leftY: payload.readUInt8(3),
+    };
   }
 }
