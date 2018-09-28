@@ -1,4 +1,5 @@
-import { Status, Exposure, VideoBitrate, CameraMode, Stick, WifiStrength } from './payloads.types';
+import { Exposure, VideoBitrate, CameraMode, Stick } from '../lib';
+import { Status, Wifi } from './state.types';
 import { Bitwise } from '../utils';
 
 export class TelloPayloadParsers {
@@ -8,7 +9,7 @@ export class TelloPayloadParsers {
   }
 
   // Command 26
-  static parseWifiStrength(payload: Buffer): WifiStrength {
+  static parseWifiStrength(payload: Buffer): Partial<Wifi> {
     return {
       signal: payload.readUInt8(0),
       interference: payload.readUInt8(1),
@@ -31,22 +32,22 @@ export class TelloPayloadParsers {
   }
 
   // Command 53
-  static parseLightStrength(payload: Buffer) {
+  static parseLightStrength(payload: Buffer): number {
     return payload.readUInt8(0);
   }
 
   // Command 55
-  static parseJpegQuality(payload: Buffer) {
+  static parseJpegQuality(payload: Buffer): number {
     return payload.readInt8(0);
   }
 
   // Command 69
-  static parseVersion(payload: Buffer) {
+  static parseVersion(payload: Buffer): string {
     return payload.toString();
   }
 
   // Command 86
-  static parseFlightStatus(payload: Buffer) {
+  static parseFlightStatus(payload: Buffer): Partial<Status> {
     const status: Partial<Status> = {};
     status.height = payload.readInt16LE(0);
     status.northSpeed = payload.readInt16LE(2);

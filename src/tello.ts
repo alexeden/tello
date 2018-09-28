@@ -1,10 +1,11 @@
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, Subject } from 'rxjs';
 import {
   map,
   take,
   tap,
   filter,
   skipWhile,
+  takeUntil,
 } from 'rxjs/operators';
 import { UdpSubject } from './utils';
 import {
@@ -12,13 +13,15 @@ import {
   TelloCommandServer,
   TelloVideoClient,
 } from './tello.constants';
-import { TelloPacketGenerator, TelloPacket, Packet, Command, TelloPayloadParsers } from './protocol';
+import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
+import { TelloPayloadParsers } from './state';
 import { TelloVideoUtils } from './video';
 
 export class Tello {
   private readonly commandSocket: UdpSubject;
   private readonly videoSocket: UdpSubject;
   private readonly intervals: NodeJS.Timer[] = [];
+  private readonly stopSignal = new Subject<any>();
   private readonly connected = new BehaviorSubject(false);
 
   readonly generator: TelloPacketGenerator;
@@ -36,33 +39,43 @@ export class Tello {
     });
   }
 
+  // Raw command stream
   get rawCommandStream(): Observable<Buffer> {
-    return this.commandSocket.asObservable();
+    return this.commandSocket.asObservable().pipe(
+      takeUntil(this.stopSignal)
+    );
   }
 
+  // Raw video stream
+  get rawVideoStream() {
+    return this.videoSocket.asObservable().pipe(
+      takeUntil(this.stopSignal)
+    );
+  }
+
+  // Transformed command stream
   get packetStream(): Observable<Packet> {
-    return this.commandSocket.asObservable().pipe(
+    return this.rawCommandStream.pipe(
       filter(TelloPacket.bufferIsPacket),
       map(TelloPacket.fromBuffer)
     );
   }
 
+  // Transformed command stream
   get messageStream(): Observable<Buffer> {
-    return this.commandSocket.asObservable().pipe(
+    return this.rawCommandStream.pipe(
       filter(buf => !TelloPacket.bufferIsPacket(buf))
     );
   }
 
+  // Transformed video stream
   get videoStream() {
-    return this.videoSocket.asObservable().pipe(
+    return this.rawVideoStream.pipe(
       skipWhile(buf => !TelloVideoUtils.isKeyframe(buf)),
       map(frame => frame.slice(2))
     );
   }
 
-  get rawVideoStream() {
-    return this.videoSocket.asObservable();
-  }
 
   get flightStatus() {
     return this.packetStream.pipe(
@@ -81,6 +94,13 @@ export class Tello {
     return sent;
   }
 
+  private async sendOnInterval(interval: number, messageThunk: () => Packet | Buffer) {
+    this.intervals.push(setInterval(
+      () => this.send(messageThunk()),
+      interval
+    ));
+  }
+
   async start() {
     const connectionRequest = this.generator.createConnectionRequest(TelloVideoClient.port);
     const connected = new Promise((ok, err) => {
@@ -94,24 +114,9 @@ export class Tello {
     await this.send(connectionRequest);
     console.log('connection request sent');
     await connected;
-
-    await this.generator.setDateTime();
-
-    this.intervals.push(setInterval(
-      () => this.send(this.generator.setStick()),
-      20
-    ));
-
-    this.intervals.push(setInterval(
-      () => this.send(this.generator.setDateTime()),
-      1000
-    ));
-
-    this.intervals.push(setInterval(
-      () => this.send(this.generator.queryVideoSpsPps()),
-      1000
-    ));
-
+    this.sendOnInterval(20, () => this.generator.setStick());
+    this.sendOnInterval(2000, () => this.generator.setDateTime());
+    this.sendOnInterval(1000, () => this.generator.queryVideoSpsPps());
     await this.send(this.generator.queryVersion());       /* 69 */
     await this.send(this.generator.queryVideoBitrate());  /* 40 */
     await this.send(this.generator.queryHeightLimit());   /* 4182 */
@@ -125,6 +130,7 @@ export class Tello {
   }
 
   stop() {
+    this.stopSignal.next('stop!');
     let interval;
     // tslint:disable-next-line:no-conditional-assignment
     while (interval = this.intervals.shift()) {
