@@ -22,17 +22,24 @@ app.use(webpackDevMiddleware(compiler, {
 }));
 
 export const httpsServer = https.createServer(httpsServerOptions, app).listen(httpsPort);
-export const wssServer = new ws.Server({ server: httpsServer });
-export const broadcast = <T>(data: T): T => {
-  wssServer.clients.forEach(client => {
-    if (client.readyState === ws.OPEN) {
-      try {
-        client.send(data);
+export const wssStateServer = new ws.Server({ server: httpsServer, path: '/state' });
+export const wssVideoServer = new ws.Server({ server: httpsServer, path: '/video' });
+
+const createBroadcast = (server: ws.Server) => {
+  return <T>(data: T): T => {
+    server.clients.forEach(client => {
+      if (client.readyState === ws.OPEN) {
+        try {
+          client.send(data);
+        }
+        catch (error) {
+          console.error(`Failed to send to WSS client with url ${client.url}`, error);
+        }
       }
-      catch (error) {
-        console.error(`Failed to send to WSS client with url ${client.url}`, error);
-      }
-    }
-  });
-  return data;
+    });
+    return data;
+  };
 };
+
+export const broadcastVideo = createBroadcast(wssVideoServer);
+export const broadcastState = createBroadcast(wssStateServer);

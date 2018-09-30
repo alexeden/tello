@@ -1,4 +1,4 @@
-import { TelloState } from './state.types';
+import { TelloState } from './tello-state.types';
 import { Subject, ConnectableObservable, of } from 'rxjs';
 import { Packet, Command } from '../protocol';
 import { publishReplay, scan } from 'rxjs/operators';

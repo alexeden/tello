@@ -12,6 +12,7 @@ import {
 import { Tello } from './tello';
 import { tag } from './utils';
 import { TelloPacket } from './protocol';
+import { spawn } from 'child_process';
 
 const leftpad = (value: any, char: string | number = 0, w = 2) => repeat(char, 10).join('').concat(value).slice(-w);
 
@@ -23,13 +24,52 @@ const createTimestamp = () => {
   ].join('.');
 };
 
+(async () => {
+  const drone = new Tello();
+  const mediaPath = path.resolve(__dirname, '..', 'media');
+  const videoPath = path.join(mediaPath, `video.${createTimestamp()}.mp4`);
+  const videoRecording = fs.createWriteStream(videoPath);
+
+  const h264encoder = spawn(
+    'ffmpeg',
+    [
+      '-fflags', 'nobuffer',
+      '-f', 'h264',
+      '-i', '-',
+      '-r', '30',
+      '-c:v', 'libx264',
+      '-b:v', '3M',
+      '-profile', 'baseline',
+      '-preset', 'ultrafast',
+      '-tune', 'zerolatency',
+      '-vsync', '0',
+      '-async', '1',
+      '-bsf:v', 'h264_mp4toannexb',
+      '-x264-params', 'keyint=15:scenecut=0',
+      '-an',
+      '-f', 'h264',
+      '-',
+    ]
+  );
+
+  drone.videoStream.subscribe(videoChunk => {
+    h264encoder.stdin.write(videoChunk);
+  });
+
+  h264encoder.stdout.on('data', data => {
+    videoRecording.write(data);
+  });
+
+  drone.start();
+})();
+
 // (async () => {
 //   const drone = new Tello();
 
-//   // const mediaPath = path.resolve(__dirname, '..', 'media');
-//   // const videoPath = path.join(mediaPath, `video.${createTimestamp()}.h264`);
-//   // const videoRecording = fs.createWriteStream(videoPath);
-//   // fs.symlinkSync(videoPath, path.join(mediaPath, 'latest'));
+//   const mediaPath = path.resolve(__dirname, '..', 'media');
+//   const videoPath = path.join(mediaPath, `video.${createTimestamp()}.h264`);
+//   const videoRecording = fs.createWriteStream(videoPath);
+//   fs.symlinkSync(videoPath, path.join(mediaPath, 'latest'));
 
 //   // drone.videoStream.subscribe(videoRecording.write.bind(videoRecording));
 
@@ -38,28 +78,6 @@ const createTimestamp = () => {
 //   drone.start();
 // })();
 
-
-(async () => {
-  const drone = new Tello();
-  drone.stateStream.pipe(
-    // tag('state', true)
-  ).subscribe();
-  // const rawCommandPath = path.join(path.resolve(__dirname, '..', 'media'), `commands.${createTimestamp()}.txt`);
-  // const rawCommandOutput = fs.createWriteStream(rawCommandPath);
-  // drone.rawCommandStream.pipe(
-  //   filter(TelloPacket.bufferIsPacket),
-  //   map((buf, i) => {
-  //     const packet = TelloPacket.fromBuffer(buf);
-  //     const bufString = [...buf].map(val => `0x${leftpad(val.toString(16))}`).join(', ');
-  //     const index = leftpad(i, ' ', 6);
-  //     const commandId = leftpad(`"${packet.command}"`, ' ', 6);
-  //     const bufLength = leftpad(`(${buf.length})`, ' ', 8);
-  //     return `${index} ${commandId} ${bufLength}:\t [${bufString}]\n`;
-  //   })
-  // )
-  // .subscribe(rawCommandOutput.write.bind(rawCommandOutput));
-  drone.start();
-})();
 // (async () => {
 //   const drone = new Tello();
 //   const rawCommandPath = path.join(path.resolve(__dirname, '..', 'media'), `commands.${createTimestamp()}.txt`);

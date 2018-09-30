@@ -1,7 +1,6 @@
 import { Exposure, VideoBitrate, CameraMode, Stick } from '../lib';
-import { Wifi, SensorFlags, Speed, Battery, Flight, Sensors } from './state.types';
+import { Wifi, SensorFlags, Speed, Battery, Flight, Sensors } from './tello-state.types';
 import { Bitwise } from '../utils';
-import { Command } from 'protocol';
 
 
 // const PayloadGuard = (defaultValue: any) => {

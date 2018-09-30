@@ -7,31 +7,20 @@
  */
 // ffmpeg -i udp://0.0.0.0:11111 -f sdl "window title"
 // import * as readline from 'readline';
-import chalk from 'chalk';
-import { fromEvent } from 'rxjs';
-import { broadcast } from './server';
-import {
-  map,
-  take,
-  tap,
-  filter,
-} from 'rxjs/operators';
-import {
-  TelloCommandClient,
-  TelloCommandServer,
-  TelloVideoClient,
-  Tello,
-  TelloPacket, Type, Command, Packet,
-  UdpSubject, tag,
-} from '../../dist';
+import { spawn, ChildProcess } from 'child_process';
+import { broadcastState, broadcastVideo } from './server';
+// import { map, take, tap, filter } from 'rxjs/operators';
+import { Tello } from '../../dist';
 
 
 (async () => {
 
   const drone = new Tello();
-  drone.packetStream.subscribe(
-    packet => broadcast(JSON.stringify(packet))
+  drone.stateStream.subscribe(
+    state => broadcastState(JSON.stringify(state))
   );
+
+  drone.videoStream.subscribe(broadcastVideo);
 
   drone.start();
 })();
