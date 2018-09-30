@@ -1,8 +1,6 @@
 import { Observable, BehaviorSubject, Subject } from 'rxjs';
 import {
   map,
-  take,
-  tap,
   filter,
   skipWhile,
   takeUntil,
@@ -14,7 +12,7 @@ import {
   TelloVideoClient,
 } from './tello.constants';
 import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
-import { TelloStateManager, PayloadParsers, TelloState } from './state';
+import { TelloStateManager, TelloState } from './state';
 import { TelloVideoUtils } from './video';
 
 export class Tello {
