@@ -1,23 +1,33 @@
+import { CameraMode, VideoBitrate, Exposure } from '../lib';
+
 export interface Battery {
   percentage: number;
-  // percentageLeft: number;
-  // low: boolean;
-  // lower: boolean;
-  // batteryState: boolean;
-  // powerState: boolean;
+  lowThreshold: number;
   flyTimeLeft: number;
 }
 
+export interface Camera {
+  bitrate: VideoBitrate;
+  exposure: Exposure;
+  jpegQuality: number;
+  mode: CameraMode;
+}
+
 export interface Wifi {
+  interference: number;
   region: string;
   signal: number;
-  interference: number;
 }
 
 export interface Flight {
-  imuCalibration: number;
-  height: number;
+  heightLimit: number;
   time: number;
+}
+
+export interface Sensors {
+  height: number;
+  imuCalibration: number;
+  light: number;
 }
 
 export interface Speed {
@@ -37,13 +47,14 @@ export interface SensorFlags {
 }
 
 export interface TelloState {
-  // battery: Partial<Battery>;
   wifi: Partial<Wifi>;
-  // status: Status | {};
+  camera: Camera | {};
   flight: Flight | {};
+  sensors: Sensors | {};
   sensorFlags: SensorFlags | {};
   battery: Battery | {};
   speed: Speed | {};
+  version: string | null;
 }
 
 // export interface Status {

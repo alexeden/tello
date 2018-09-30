@@ -83,17 +83,8 @@ export class Tello {
     );
   }
 
-
-  get flightStatus() {
-    return this.packetStream.pipe(
-      filter(packet => packet.command === Command.FlightStatus),
-      map(({ payload }) => PayloadParsers.parseFlightStatus(payload))
-    );
-  }
-
   private async send(message: Packet | Buffer) {
     const buffer = message instanceof Buffer ? message : TelloPacket.toBuffer(message);
-    // console.log(`TX `, message);
     const sent = await this.commandSocket.next(buffer);
     if (!sent) {
       throw new Error(`Failed to send command with ID "${message instanceof Buffer ? message : message.command}"`);
@@ -122,10 +113,7 @@ export class Tello {
     console.log('connection request sent');
     await connected;
     console.log('connected!');
-    // this.intervals.push(setInterval(
-    //   () => this.send(this.generator.setStick()),
-    //   20
-    // ));
+
     this.sendOnInterval(20, () => this.generator.setStick());
     this.sendOnInterval(2000, () => this.generator.setDateTime());
     this.sendOnInterval(1000, () => this.generator.queryVideoSpsPps());

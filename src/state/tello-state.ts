@@ -1,7 +1,7 @@
 import { TelloState } from './state.types';
 import { Subject, ConnectableObservable, of } from 'rxjs';
 import { Packet, Command } from '../protocol';
-import { publishReplay, switchMap, scan } from 'rxjs/operators';
+import { publishReplay, scan } from 'rxjs/operators';
 import { PayloadParsers } from './parsers';
 
 type StateUpdate = (state: TelloState) => TelloState;
@@ -14,10 +14,13 @@ export class TelloStateManager {
   constructor() {
     const init: TelloState = {
       battery: {},
+      camera: {},
       flight: {},
       sensorFlags: {},
+      sensors: {},
       speed: {},
       wifi: {},
+      version: null,
     };
 
     this.state = this.updates.asObservable().pipe(
@@ -28,69 +31,111 @@ export class TelloStateManager {
     this.state.connect();
   }
 
-
-
   parseAndUpdate({ command, payload }: Packet) {
+    if (payload.length < 1) {
+      console.log(`Command ID "${command}" received an empty payload.`);
+      return false;
+    }
+
     switch (command) {
       case Command.QueryWifiRegion:
         const region = PayloadParsers.parseWifiRegion(payload);
         this.updates.next(state => ({
           ...state,
-          wifi: {
-            ...state.wifi,
-            region,
-          },
+          wifi: { ...state.wifi, region },
         }));
-        break;
+        return true;
+
       case Command.WifiStrength:
-        const { signal, interference } = PayloadParsers.parseWifiStrength(payload);
+        const wifi = PayloadParsers.parseWifiStrength(payload);
         this.updates.next(state => ({
           ...state,
-          wifi: {
-            ...state.wifi,
-            interference,
-            signal,
-          },
+          wifi: { ...state.wifi, ...wifi },
         }));
-        break;
+        return true;
+
       case Command.SetVideoBitrate:
-        break;
+        const bitrate = PayloadParsers.parseVideoBitrate(payload);
+        this.updates.next(state => ({
+          ...state,
+          camera: { ...state.camera, bitrate },
+        }));
+        return true;
+
       case Command.SetCameraMode:
-        break;
+        const mode = PayloadParsers.parseCameraMode(payload);
+        this.updates.next(state => ({
+          ...state,
+          camera: { ...state.camera, mode },
+        }));
+        return true;
+
       case Command.SetExposureValues:
-        break;
+        const exposure = PayloadParsers.parseExposureValue(payload);
+        this.updates.next(state => ({
+          ...state,
+          camera: { ...state.camera, exposure },
+        }));
+        return true;
+
       case Command.LightStrength:
-        break;
+        const light = PayloadParsers.parseLightStrength(payload);
+        this.updates.next(state => ({
+          ...state,
+          sensors: { ...state.sensors, light },
+        }));
+        return true;
+
       case Command.QueryJpegQuality:
-        break;
+        const jpegQuality = PayloadParsers.parseJpegQuality(payload);
+        this.updates.next(state => ({
+          ...state,
+          camera: { ...state.camera, jpegQuality },
+        }));
+        return true;
+
       case Command.QueryVersion:
-        break;
+        const version = PayloadParsers.parseVersion(payload);
+        this.updates.next(state => ({ ...state, version }));
+        return true;
+
       case Command.FlightStatus:
         const {
           battery,
           flight,
           sensorFlags,
+          sensors,
           speed,
         } = PayloadParsers.parseFlightStatus(payload);
         this.updates.next(state => ({
           ...state,
           battery: { ...state.battery, ...battery },
           flight: { ...state.flight, ...flight },
+          sensors: { ...state.sensors, ...sensors },
           sensorFlags: { ...state.sensorFlags, ...sensorFlags },
           speed: { ...state.speed, ...speed },
         }));
-        break;
+        return true;
+
       case Command.QueryHeightLimit:
-        break;
+        const heightLimit = PayloadParsers.parseHeightLimit(payload);
+        this.updates.next(state => ({
+          ...state,
+          flight: { ...state.flight, heightLimit },
+        }));
+        return true;
+
       case Command.QueryLowBattThresh:
-        break;
-      case Command.QueryAttitude:
-        break;
+        const lowThreshold = PayloadParsers.parseLowBatteryThreshold(payload);
+        this.updates.next(state => ({
+          ...state,
+          battery: { ...state.battery, lowThreshold },
+        }));
+        return true;
 
-
+      default:
+        console.log(`No parser defined for command ID "${command}", payload is ${payload.length} bytes long`);
+        return false;
     }
-    return true;
   }
-
-
 }

@@ -1,8 +1,25 @@
 import { Exposure, VideoBitrate, CameraMode, Stick } from '../lib';
-import { Wifi, SensorFlags, Speed, Battery, Flight } from './state.types';
+import { Wifi, SensorFlags, Speed, Battery, Flight, Sensors } from './state.types';
 import { Bitwise } from '../utils';
 import { Command } from 'protocol';
 
+
+// const PayloadGuard = (defaultValue: any) => {
+//   return <T extends object, K extends keyof T>(target: T, methodName: K, descriptor: PropertyDescriptor) => {
+//     if (typeof target[methodName] === 'function') {
+//       const original: any = target[methodName];
+//       descriptor.value = (...args: any[]) => {
+//         try {
+//           return original(...args);
+//         }
+//         catch (error) {
+//           console.error(`Parser ${methodName} threw an error: `, error, `Error thrown because of this payload: `, ...args);
+//           return defaultValue;
+//         }
+//       };
+//     }
+//   };
+// };
 
 export class PayloadParsers {
   // Commmand 21
@@ -12,21 +29,12 @@ export class PayloadParsers {
 
   // Command 26
   static parseWifiStrength(payload: Buffer): Partial<Wifi> {
-    console.log('payload: ', payload);
-    if (!payload.length) {
-      return {};
-    }
-    else if (payload.length > 1) {
-      return {
-        signal: payload.readUInt8(0),
-        interference: payload.readUInt8(1),
-      };
-    }
-    else {
-      return {
-        signal: payload.readUInt8(0),
-      };
-    }
+    return !payload.length
+      ? {}
+      : {
+          signal: payload.readUInt8(0),
+          interference: payload.readUInt8(1),
+        };
   }
 
   // Command 32
@@ -61,7 +69,7 @@ export class PayloadParsers {
 
   // Command 86
   static parseFlightStatus(payload: Buffer) {
-    const battery: Battery = {
+    const battery: Partial<Battery> = {
       percentage: payload.readInt8(12),
       flyTimeLeft: payload.readInt16LE(13),
     };
@@ -83,16 +91,20 @@ export class PayloadParsers {
       wind: sensorFlagByte(7),
     };
 
-    const flight: Flight = {
+    const flight: Partial<Flight> = {
+      time: payload.readInt16LE(8),
+    };
+
+    const sensors: Partial<Sensors> = {
       height: payload.readInt16LE(0),
       imuCalibration: payload.readInt8(11),
-      time: payload.readInt16LE(8),
     };
 
     return {
       flight,
       speed,
       sensorFlags,
+      sensors,
       battery,
     };
     // if (payload.length <= 15)

@@ -42,7 +42,7 @@ const createTimestamp = () => {
 (async () => {
   const drone = new Tello();
   drone.stateStream.pipe(
-    tag('state', true)
+    // tag('state', true)
   ).subscribe();
   // const rawCommandPath = path.join(path.resolve(__dirname, '..', 'media'), `commands.${createTimestamp()}.txt`);
   // const rawCommandOutput = fs.createWriteStream(rawCommandPath);
