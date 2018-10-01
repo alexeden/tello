@@ -19,7 +19,7 @@ const leftpad = (value: any, char: string | number = 0, w = 2) => repeat(char, 1
 const createTimestamp = () => {
   const d = new Date();
   return [
-    [d.getFullYear(), leftpad(d.getMonth()), leftpad(d.getDate())].join('-'),
+    [d.getFullYear(), leftpad(d.getMonth() + 1), leftpad(d.getDate())].join('-'),
     [leftpad(d.getHours()), leftpad(d.getMinutes()), leftpad(d.getSeconds())].join('-'),
   ].join('.');
 };
@@ -27,7 +27,8 @@ const createTimestamp = () => {
 (async () => {
   const drone = new Tello();
   const mediaPath = path.resolve(__dirname, '..', 'media');
-  const videoPath = path.join(mediaPath, `video.${createTimestamp()}.mp4`);
+  const videoExtension = 'mp4';
+  const videoPath = path.join(mediaPath, `video.${createTimestamp()}.${videoExtension}`);
   const videoRecording = fs.createWriteStream(videoPath);
 
   const h264encoder = spawn(
@@ -35,29 +36,39 @@ const createTimestamp = () => {
     [
       '-fflags', 'nobuffer',
       '-f', 'h264',
-      '-i', '-',
       '-r', '30',
+      '-i', '-',
       '-c:v', 'libx264',
-      '-b:v', '3M',
-      '-profile', 'baseline',
+      '-codec:v', 'copy',
       '-preset', 'ultrafast',
       '-tune', 'zerolatency',
       '-vsync', '0',
       '-async', '1',
       '-bsf:v', 'h264_mp4toannexb',
       '-x264-params', 'keyint=15:scenecut=0',
+      '-movflags', 'frag_keyframe+empty_moov',
       '-an',
-      '-f', 'h264',
+      '-f', 'mp4',
       '-',
     ]
   );
 
   drone.videoStream.subscribe(videoChunk => {
+    // console.log('writing to h264encoder');
+    // videoRecording.write(videoChunk);
     h264encoder.stdin.write(videoChunk);
   });
 
-  h264encoder.stdout.on('data', data => {
-    videoRecording.write(data);
+  h264encoder.stdout.on('data', chunk => {
+    videoRecording.write(chunk);
+  });
+
+  h264encoder.stdout.on('error', error => {
+    console.log('h264encoder stdout error: ', error);
+  });
+
+  h264encoder.stderr.on('data', data => {
+    console.log('h264encoder stderr data: ', data.toString());
   });
 
   drone.start();
