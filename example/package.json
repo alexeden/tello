@@ -25,6 +25,7 @@
   "dependencies": {
     "backoff-rxjs": "0.0.10",
     "express": "^4.16.3",
+    "mux.js": "^5.0.0",
     "vue": "^2.5.17"
   },
   "nodemonConfig": {
