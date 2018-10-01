@@ -53,7 +53,7 @@ const spawnEncoder = () => {
 (async () => {
   const wssVideoServer = new ws.Server({ noServer: true });
   const wssStateServer = new ws.Server({ noServer: true });
-
+  const h264NalUnit = Buffer.from([0, 0, 0, 1]);
   httpsServer.on('upgrade', (request: IncomingMessage, socket: Socket, head: Buffer) => {
     const pathname = url.parse(request.url!).pathname;
 
@@ -93,8 +93,20 @@ const spawnEncoder = () => {
   // //   h264encoder.stdin.write(videoChunk);
   // // });
 
-  h264encoder.stdout.on('data', (chunk: Buffer) => {
-    broadcastVideo(chunk.toString('binary'));
+  let h264chunks: Buffer[] = [];
+
+  h264encoder.stdout.on('data', (data: Buffer) => {
+    const idx = data.indexOf(h264NalUnit);
+    if (idx > -1 && h264chunks.length > 0) {
+      console.log('got a NAL unit! sending the chunks');
+      h264chunks.push(data.slice(0, idx));
+      broadcastVideo(Buffer.concat(h264chunks).toString('binary'));
+      h264chunks = [];
+      h264chunks.push(data.slice(idx));
+    }
+    else {
+      h264chunks.push(data);
+    }
   });
 
 
