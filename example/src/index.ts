@@ -89,24 +89,21 @@ const spawnEncoder = () => {
   const h264encoder = spawnEncoder();
 
   drone.videoStream.subscribe(chunk => h264encoder.stdin.write(chunk));
-  // // videoChunk => {
-  // //   h264encoder.stdin.write(videoChunk);
-  // // });
 
-  let h264chunks: Buffer[] = [];
+  // let h264chunks: Buffer[] = [];
 
   h264encoder.stdout.on('data', (data: Buffer) => {
-    const idx = data.indexOf(h264NalUnit);
-    if (idx > -1 && h264chunks.length > 0) {
-      console.log('got a NAL unit! sending the chunks');
-      h264chunks.push(data.slice(0, idx));
-      broadcastVideo(Buffer.concat(h264chunks).toString('binary'));
-      h264chunks = [];
-      h264chunks.push(data.slice(idx));
-    }
-    else {
-      h264chunks.push(data);
-    }
+    broadcastVideo(data.toString('binary'));
+    // const idx = data.indexOf(h264NalUnit);
+    // if (idx > -1 && h264chunks.length > 0) {
+    //   h264chunks.push(data.slice(0, idx));
+    //   broadcastVideo(Buffer.concat(h264chunks).toString('binary'));
+    //   h264chunks = [];
+    //   h264chunks.push(data.slice(idx));
+    // }
+    // else {
+    //   h264chunks.push(data);
+    // }
   });
 
 

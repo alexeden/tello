@@ -23,11 +23,26 @@ new Vue({
       state: null as null | any,
       videoFrame: 0,
       stateSocket: new WebSocketSubject(`wss://${window.location.host}/state`),
-      videoSocket: new WebSocketSubject({
-        url: `wss://${window.location.host}/video`,
-        // binaryType: 'arraybuffer',
-      }),
+      videoStream: new WebSocket(`wss://${window.location.host}/video`),
+      // videoSocket: new WebSocketSubject({
+      //   url: `wss://${window.location.host}/video`,
+      //   // binaryType: 'arraybuffer',
+      // }),
       subscriptions: [] as Subscription[],
+    };
+  },
+  beforeMount() {
+    this.videoStream.onopen = ev => {
+      console.log('video stream opened');
+    };
+    this.videoStream.onerror = ev => {
+      console.log('video stream error', ev);
+    };
+    this.videoStream.onmessage = ev => {
+      this.videoFrame++;
+    };
+    this.videoStream.onclose = ev => {
+      console.log('video stream closed');
     };
   },
   mounted() {
@@ -43,20 +58,20 @@ new Vue({
         }
       );
 
-    const videoSubscription = this.videoSocket
-      .pipe(retryBackoff({ initialInterval: 1000 }))
-      .subscribe(
-        msg => {
-          console.log('got frame');
-          this.videoFrame++;
-          // this.state = msg;
-        },
-        error => {
-          console.error(error);
-        }
-      );
+    // const videoSubscription = this.videoSocket
+    //   .pipe(retryBackoff({ initialInterval: 1000 }))
+    //   .subscribe(
+    //     msg => {
+    //       console.log('got frame');
+    //       this.videoFrame++;
+    //       // this.state = msg;
+    //     },
+    //     error => {
+    //       console.error(error);
+    //     }
+    //   );
 
     this.subscriptions.push(stateSubscription);
-    this.subscriptions.push(videoSubscription);
+    // this.subscriptions.push(videoSubscription);
   },
 });
