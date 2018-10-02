@@ -20,4 +20,12 @@ app.use(webpackDevMiddleware(compiler, {
   publicPath: config.output!.publicPath!,
 }));
 
+app.use(express.static(path.resolve(__dirname, 'client'), {
+  setHeaders(res, filePath) {
+    if (filePath.endsWith('.wasm')) {
+      res.setHeader('Content-Type',  'application/wasm');
+    }
+  },
+}));
+
 export const httpsServer = https.createServer(httpsServerOptions, app).listen(httpsPort);

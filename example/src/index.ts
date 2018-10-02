@@ -36,15 +36,16 @@ const spawnEncoder = () => {
   return spawn(
     'ffmpeg',
     [
-      '-fflags', 'nobuffer', '-f', 'h264', '-r', '30',
-      '-i', '-',
-      '-c:v', 'libx264', '-codec:v', 'copy',
-      '-preset', 'ultrafast', '-tune', 'zerolatency',
+      '-fflags', 'nobuffer', '-f', 'h264',
+      '-i', '-', '-r', '30',
+      '-c:v', 'libx264', '-b:v', '3M',
+      '-preset', 'ultrafast',
+      '-tune', 'zerolatency',
       '-vsync', '0', '-async', '1',
       '-bsf:v', 'h264_mp4toannexb',
       '-x264-params', 'keyint=15:scenecut=0',
       '-movflags', 'frag_keyframe+empty_moov',
-      '-an', '-f', 'mp4',
+      '-an', '-f', 'h264',
       '-',
     ]
   );
@@ -93,7 +94,6 @@ const spawnEncoder = () => {
   let h264chunks: Buffer[] = [];
 
   h264encoder.stdout.on('data', (data: Buffer) => {
-    // broadcastVideo(data.toString('binary'));
     const idx = data.indexOf(h264NalUnit);
     if (idx > -1 && h264chunks.length > 0) {
       h264chunks.push(data.slice(0, idx));
