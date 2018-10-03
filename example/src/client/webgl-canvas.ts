@@ -28,7 +28,7 @@ interface YUVCanvasOptions {
  * This class can be used to render output pictures from an H264bsdDecoder to a canvasElement element.
  * If available the content is rendered using WebGL.
  */
-export class YUVCanvas {
+export class WebGLCanvas {
   canvasElement: HTMLCanvasElement;
   contextOptions: WebGLContextAttributes;
   width: number;
@@ -43,19 +43,21 @@ export class YUVCanvas {
   uTextureRef: WebGLTexture;
   vTextureRef: WebGLTexture;
 
-  constructor(parOptions: YUVCanvasOptions = {}) {
+  constructor(
+    options: YUVCanvasOptions = {}
+  ) {
 
-    this.canvasElement = parOptions.canvas || document.createElement('canvas');
-    this.contextOptions = parOptions.contextOptions || {};
-    this.width = parOptions.width || 640;
-    this.height = parOptions.height || 320;
-    this.animationTime = parOptions.animationTime || 0;
+    this.canvasElement = options.canvas || document.createElement('canvas');
+    this.contextOptions = options.contextOptions || {};
+    this.width = options.width || 640;
+    this.height = options.height || 320;
+    this.animationTime = options.animationTime || 0;
     this.canvasElement.width = this.width;
     this.canvasElement.height = this.height;
 
     this.contextGL = this.canvasElement.getContext('webgl', this.contextOptions)!;
 
-    this.shaderProgram = YUVCanvas.createProgram(this.contextGL);
+    this.shaderProgram = WebGLCanvas.createProgram(this.contextGL);
     this.initBuffers();
 
     /**

@@ -6,7 +6,7 @@ export const config: webpack.Configuration & { devServer: any } = {
   target: 'web',
   mode: 'development',
   context: path.resolve(__dirname, 'client'),
-  entry: './player.ts',
+  entry: './app.ts',
   resolve: {
     extensions: ['.ts', '.js'],
     alias: {
