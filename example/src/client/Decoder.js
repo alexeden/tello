@@ -74,139 +74,37 @@
     });
     Module["preRun"] = [];
     Module["postRun"] = [];
-    var ENVIRONMENT_IS_WEB = false;
     var ENVIRONMENT_IS_WORKER = false;
-    var ENVIRONMENT_IS_NODE = false;
-    var ENVIRONMENT_IS_SHELL = false;
-    if (Module["ENVIRONMENT"]) {
-      if (Module["ENVIRONMENT"] === "WEB") {
-        ENVIRONMENT_IS_WEB = true
-      }
-      else if (Module["ENVIRONMENT"] === "WORKER") {
-        ENVIRONMENT_IS_WORKER = true
-      }
-      else if (Module["ENVIRONMENT"] === "NODE") {
-        ENVIRONMENT_IS_NODE = true
-      }
-      else if (Module["ENVIRONMENT"] === "SHELL") {
-        ENVIRONMENT_IS_SHELL = true
-      }
-      else {
-        throw new Error("Module['ENVIRONMENT'] value is not valid. must be one of: WEB|WORKER|NODE|SHELL.")
-      }
+    Module["read"] = function shell_read(url) {
+      var xhr = new XMLHttpRequest;
+      xhr.open("GET", url, false);
+      xhr.send(null);
+      return xhr.responseText
+    };
+    Module["readBinary"] = function readBinary(url) {
+      var xhr = new XMLHttpRequest;
+      xhr.open("GET", url, false);
+      xhr.responseType = "arraybuffer";
+      xhr.send(null);
+      return new Uint8Array(xhr.response)
     }
-    else {
-      ENVIRONMENT_IS_WEB = typeof window === "object";
-      ENVIRONMENT_IS_WORKER = typeof importScripts === "function";
-      ENVIRONMENT_IS_NODE = typeof process === "object" && typeof null === "function" && !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_WORKER;
-      ENVIRONMENT_IS_SHELL = !ENVIRONMENT_IS_WEB && !ENVIRONMENT_IS_NODE && !ENVIRONMENT_IS_WORKER
-    }
-    if (ENVIRONMENT_IS_NODE) {
-      var nodeFS;
-      var nodePath;
-      Module["read"] = function shell_read(filename, binary) {
-        var ret;
-        if (!nodeFS) nodeFS = (null)("fs");
-        if (!nodePath) nodePath = (null)("path");
-        filename = nodePath["normalize"](filename);
-        ret = nodeFS["readFileSync"](filename);
-        return binary ? ret : ret.toString()
-      };
-      Module["readBinary"] = function readBinary(filename) {
-        var ret = Module["read"](filename, true);
-        if (!ret.buffer) {
-          ret = new Uint8Array(ret)
+    Module["readAsync"] = function readAsync(url, onload, onerror) {
+      var xhr = new XMLHttpRequest;
+      xhr.open("GET", url, true);
+      xhr.responseType = "arraybuffer";
+      xhr.onload = function xhr_onload() {
+        if (xhr.status == 200 || xhr.status == 0 && xhr.response) {
+          onload(xhr.response);
+          return
         }
-        assert(ret.buffer);
-        return ret
+        onerror()
       };
-      if (process["argv"].length > 1) {
-        Module["thisProgram"] = process["argv"][1].replace(/\\/g, "/")
-      }
-      Module["arguments"] = process["argv"].slice(2);
-      if (typeof module !== "undefined") {
-        module["exports"] = Module
-      }
-      process["on"]("uncaughtException", (function (ex) {
-        if (!(ex instanceof ExitStatus)) {
-          throw ex
-        }
-      }));
-      process["on"]("unhandledRejection", (function (reason, p) {
-        process["exit"](1)
-      }));
-      Module["inspect"] = (function () {
-        return "[Emscripten Module object]"
-      })
-    }
-    else if (ENVIRONMENT_IS_SHELL) {
-      if (typeof read != "undefined") {
-        Module["read"] = function shell_read(f) {
-          return read(f)
-        }
-      }
-      Module["readBinary"] = function readBinary(f) {
-        var data;
-        if (typeof readbuffer === "function") {
-          return new Uint8Array(readbuffer(f))
-        }
-        data = read(f, "binary");
-        assert(typeof data === "object");
-        return data
-      };
-      if (typeof scriptArgs != "undefined") {
-        Module["arguments"] = scriptArgs
-      }
-      else if (typeof arguments != "undefined") {
-        Module["arguments"] = arguments
-      }
-      if (typeof quit === "function") {
-        Module["quit"] = (function (status, toThrow) {
-          quit(status)
-        })
-      }
-    }
-    else if (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) {
-      Module["read"] = function shell_read(url) {
-        var xhr = new XMLHttpRequest;
-        xhr.open("GET", url, false);
-        xhr.send(null);
-        return xhr.responseText
-      };
-      if (ENVIRONMENT_IS_WORKER) {
-        Module["readBinary"] = function readBinary(url) {
-          var xhr = new XMLHttpRequest;
-          xhr.open("GET", url, false);
-          xhr.responseType = "arraybuffer";
-          xhr.send(null);
-          return new Uint8Array(xhr.response)
-        }
-      }
-      Module["readAsync"] = function readAsync(url, onload, onerror) {
-        var xhr = new XMLHttpRequest;
-        xhr.open("GET", url, true);
-        xhr.responseType = "arraybuffer";
-        xhr.onload = function xhr_onload() {
-          if (xhr.status == 200 || xhr.status == 0 && xhr.response) {
-            onload(xhr.response);
-            return
-          }
-          onerror()
-        };
-        xhr.onerror = onerror;
-        xhr.send(null)
-      };
-      Module["setWindowTitle"] = (function (title) {
-        document.title = title
-      })
-    }
-    else {
-      throw new Error("not compiled for this environment")
-    }
-    console.log('ENVIRONMENT_IS_WEB: ', ENVIRONMENT_IS_WEB);
-    console.log('ENVIRONMENT_IS_WORKER: ', ENVIRONMENT_IS_WORKER);
-    console.log('ENVIRONMENT_IS_NODE: ', ENVIRONMENT_IS_NODE);
-    console.log('ENVIRONMENT_IS_SHELL: ', ENVIRONMENT_IS_SHELL);
+      xhr.onerror = onerror;
+      xhr.send(null)
+    };
+    Module["setWindowTitle"] = (function (title) {
+      document.title = title
+    });
     Module["print"] = typeof console !== "undefined" ? console.log.bind(console) : typeof print !== "undefined" ? print : null;
     Module["printErr"] = typeof printErr !== "undefined" ? printErr : typeof console !== "undefined" && console.warn.bind(console) || Module["print"];
     Module.print = Module["print"];
@@ -226,11 +124,6 @@
       return ret
     }
 
-    function alignMemory(size, factor) {
-      if (!factor) factor = STACK_ALIGN;
-      var ret = size = Math.ceil(size / factor) * factor;
-      return ret
-    }
     var asm2wasmImports = {
       "f64-rem": (function (x, y) {
         return x % y
@@ -586,7 +479,7 @@
       }
 
       function getBinaryPromise() {
-        if (!Module["wasmBinary"] && (ENVIRONMENT_IS_WEB || ENVIRONMENT_IS_WORKER) && typeof fetch === "function") {
+        if (!Module["wasmBinary"] && typeof fetch === "function") {
           return fetch(wasmBinaryFile, {
             credentials: "same-origin"
           }).then((function (response) {
@@ -860,6 +753,12 @@
       if (Module["___errno_location"]) HEAP32[Module["___errno_location"]() >> 2] = value;
       return value
     }
+    function alignMemory(size, factor) {
+      if (!factor) factor = STACK_ALIGN;
+      var ret = size = Math.ceil(size / factor) * factor;
+      return ret
+    }
+
     DYNAMICTOP_PTR = staticAlloc(4);
     STACK_BASE = STACKTOP = alignMemory(STATICTOP);
     STACK_MAX = STACK_BASE + TOTAL_STACK;
@@ -964,9 +863,6 @@
         STACKTOP = initialStackTop;
         exitRuntime();
         if (Module["onExit"]) Module["onExit"](status)
-      }
-      if (ENVIRONMENT_IS_NODE) {
-        process["exit"](status)
       }
       Module["quit"](status, new ExitStatus(status))
     }
