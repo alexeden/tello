@@ -1,14 +1,7 @@
-/**
- * In practice:
- * type = 'yuv420'
- * conversionType = 'rec601'
- * customYUV444 = undefined
- *
- */
 interface OutputPicture {
-  yData: ArrayBufferView;
-  uData: ArrayBufferView;
-  vData: ArrayBufferView;
+  yData: Uint8Array;
+  uData: Uint8Array;
+  vData: Uint8Array;
   yDataPerRow?: number;
   yRowCnt?: number;
   uDataPerRow?: number;
@@ -17,106 +10,56 @@ interface OutputPicture {
   vRowCnt?: number;
 }
 
-interface YUVCanvasOptions {
-  canvas?: HTMLCanvasElement;
+type YUV<T> = Record<'y' | 'u' | 'v', T>;
+
+interface WebGLCanvasOptions {
+  canvas: HTMLCanvasElement;
   contextOptions?: WebGLContextAttributes;
   width?: number;
   height?: number;
-  animationTime?: number;
 }
 /**
  * This class can be used to render output pictures from an H264bsdDecoder to a canvasElement element.
  * If available the content is rendered using WebGL.
  */
 export class WebGLCanvas {
+  private readonly gl: WebGLRenderingContext;
+  private readonly program: WebGLProgram;
   canvasElement: HTMLCanvasElement;
-  contextOptions: WebGLContextAttributes;
   width: number;
   height: number;
-  animationTime: number;
-  contextGL: WebGLRenderingContext;
-  shaderProgram: WebGLProgram;
-  texturePosBuffer: WebGLBuffer | undefined;
-  uTexturePosBuffer: WebGLBuffer | undefined;
-  vTexturePosBuffer: WebGLBuffer | undefined;
-  yTextureRef: WebGLTexture;
-  uTextureRef: WebGLTexture;
-  vTextureRef: WebGLTexture;
+  texturePositions: YUV<WebGLBuffer>;
+  textures: YUV<WebGLTexture>;
 
   constructor(
-    options: YUVCanvasOptions = {}
+    options: WebGLCanvasOptions
   ) {
-
-    this.canvasElement = options.canvas || document.createElement('canvas');
-    this.contextOptions = options.contextOptions || {};
+    this.canvasElement = options.canvas;
     this.width = options.width || 640;
     this.height = options.height || 320;
-    this.animationTime = options.animationTime || 0;
     this.canvasElement.width = this.width;
     this.canvasElement.height = this.height;
-
-    this.contextGL = this.canvasElement.getContext('webgl', this.contextOptions)!;
-
-    this.shaderProgram = WebGLCanvas.createProgram(this.contextGL);
-    this.initBuffers();
-
-    /**
-     * Initialize GL textures and attach to shader program
-     */
-
-    const gl = this.contextGL;
-    const program = this.shaderProgram;
-    const yTextureRef = this.initTexture();
-    const ySamplerRef = gl.getUniformLocation(program, 'ySampler');
-    gl.uniform1i(ySamplerRef, 0);
-    this.yTextureRef = yTextureRef!;
-
-    const uTextureRef = this.initTexture();
-    const uSamplerRef = gl.getUniformLocation(program, 'uSampler');
-    gl.uniform1i(uSamplerRef, 1);
-    this.uTextureRef = uTextureRef!;
-
-    const vTextureRef = this.initTexture();
-    const vSamplerRef = gl.getUniformLocation(program, 'vSampler');
-    gl.uniform1i(vSamplerRef, 2);
-    this.vTextureRef = vTextureRef!;
-  }
-
-  /**
-   * Draw picture data to the canvas.
-   * If this object is using WebGL, the data must be an I420 formatted ArrayBuffer,
-   * Otherwise, data must be an RGBA formatted ArrayBuffer.
-   */
-  drawNextOutputPicture(arg: any) {
-    this.drawNextOuptutPictureGL(arg);
+    this.gl = this.canvasElement.getContext('webgl')!;
+    this.program = WebGLCanvas.createProgram(this.gl);
+    this.texturePositions = WebGLCanvas.createTexturePositions(this.gl, this.program);
+    this.textures = WebGLCanvas.createTextures(this.gl, this.program);
   }
 
   /**
    * Draw the next output picture using WebGL
+   * If this object is using WebGL, the data must be an I420 formatted ArrayBuffer,
    */
-  drawNextOuptutPictureGL(par: OutputPicture) {
-    const gl = this.contextGL;
-    const texturePosBuffer = this.texturePosBuffer;
-    const uTexturePosBuffer = this.uTexturePosBuffer;
-    const vTexturePosBuffer = this.vTexturePosBuffer;
-
-    const yTextureRef = this.yTextureRef;
-    const uTextureRef = this.uTextureRef;
-    const vTextureRef = this.vTextureRef;
-
-    const yData = par.yData;
-    const uData = par.uData;
-    const vData = par.vData;
-
+  drawNextOutputPicture(pic: OutputPicture) {
+    const gl = this.gl;
     const width = this.width;
     const height = this.height;
 
-    const yDataPerRow = par.yDataPerRow || width;
-    const yRowCnt     = par.yRowCnt || height;
-    const uDataPerRow = par.uDataPerRow || (width / 2);
-    const uRowCnt     = par.uRowCnt || (height / 2);
-    const vDataPerRow = par.vDataPerRow || uDataPerRow;
-    const vRowCnt     = par.vRowCnt || uRowCnt;
+    const yDataPerRow = pic.yDataPerRow || width;
+    const yRowCnt     = pic.yRowCnt || height;
+    const uDataPerRow = pic.uDataPerRow || (width / 2);
+    const uRowCnt     = pic.uRowCnt || (height / 2);
+    const vDataPerRow = pic.vDataPerRow || uDataPerRow;
+    const vRowCnt     = pic.vRowCnt || uRowCnt;
 
     gl.viewport(0, 0, width, height);
 
@@ -124,67 +67,136 @@ export class WebGLCanvas {
     const tLeft = 0;
     let tBottom = height / yRowCnt;
     let tRight = width / yDataPerRow;
-    const texturePosValues = new Float32Array([tRight, tTop, tLeft, tTop, tRight, tBottom, tLeft, tBottom]);
+    const yTexturePosValues = new Float32Array([tRight, tTop, tLeft, tTop, tRight, tBottom, tLeft, tBottom]);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, texturePosBuffer!);
-    gl.bufferData(gl.ARRAY_BUFFER, texturePosValues, gl.DYNAMIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.texturePositions.y);
+    gl.bufferData(gl.ARRAY_BUFFER, yTexturePosValues, gl.DYNAMIC_DRAW);
 
     tBottom = (height / 2) / uRowCnt;
     tRight = (width / 2) / uDataPerRow;
-
     const uTexturePosValues = new Float32Array([tRight, tTop, tLeft, tTop, tRight, tBottom, tLeft, tBottom]);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, uTexturePosBuffer!);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.texturePositions.u);
     gl.bufferData(gl.ARRAY_BUFFER, uTexturePosValues, gl.DYNAMIC_DRAW);
 
     tBottom = (height / 2) / vRowCnt;
     tRight = (width / 2) / vDataPerRow;
     const vTexturePosValues = new Float32Array([tRight, tTop, tLeft, tTop, tRight, tBottom, tLeft, tBottom]);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, vTexturePosBuffer!);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.texturePositions.v);
     gl.bufferData(gl.ARRAY_BUFFER, vTexturePosValues, gl.DYNAMIC_DRAW);
 
-
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, yTextureRef);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, yDataPerRow, yRowCnt, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, yData);
+    gl.bindTexture(gl.TEXTURE_2D, this.textures.y);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, yDataPerRow, yRowCnt, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, pic.yData);
 
     gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, uTextureRef);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, uDataPerRow, uRowCnt, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, uData);
+    gl.bindTexture(gl.TEXTURE_2D, this.textures.u);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, uDataPerRow, uRowCnt, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, pic.uData);
 
     gl.activeTexture(gl.TEXTURE2);
-    gl.bindTexture(gl.TEXTURE_2D, vTextureRef);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, vDataPerRow, vRowCnt, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, vData);
+    gl.bindTexture(gl.TEXTURE_2D, this.textures.v);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, vDataPerRow, vRowCnt, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, pic.vData);
 
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 
   /**
-   * Returns true if the canvas supports WebGL
+   * Initialize GL textures and attach to shader program
    */
-  isWebGL() {
-    return this.contextGL;
+  private static createTextures(
+    gl: WebGLRenderingContext,
+    program: WebGLProgram
+  ): YUV<WebGLTexture> {
+    const yTextureRef = WebGLCanvas.createTexture(gl);
+    const ySamplerRef = gl.getUniformLocation(program, 'ySampler');
+    gl.uniform1i(ySamplerRef, 0);
+
+    const uTextureRef = WebGLCanvas.createTexture(gl);
+    const uSamplerRef = gl.getUniformLocation(program, 'uSampler');
+    gl.uniform1i(uSamplerRef, 1);
+
+    const vTextureRef = WebGLCanvas.createTexture(gl);
+    const vSamplerRef = gl.getUniformLocation(program, 'vSampler');
+    gl.uniform1i(vSamplerRef, 2);
+
+    return {
+      y: yTextureRef,
+      u: uTextureRef,
+      v: vTextureRef,
+    };
+  }
+
+  /**
+   * Initialize vertex buffers and attach to shader program
+   */
+  private static createTexturePositions(
+    gl: WebGLRenderingContext,
+    program: WebGLProgram
+  ): YUV<WebGLBuffer> {
+    const vertexPosBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 1, -1, 1, 1, -1, -1, -1]), gl.STATIC_DRAW);
+
+    const vertexPosRef = gl.getAttribLocation(program, 'vertexPos');
+    gl.enableVertexAttribArray(vertexPosRef);
+    gl.vertexAttribPointer(vertexPosRef, 2, gl.FLOAT, false, 0, 0);
+
+    return {
+      y: WebGLCanvas.createTexturePositionBuffer(gl, program, 'yTexturePos'),
+      u: WebGLCanvas.createTexturePositionBuffer(gl, program, 'uTexturePos'),
+      v: WebGLCanvas.createTexturePositionBuffer(gl, program, 'vTexturePos'),
+    };
+  }
+
+  private static createTexturePositionBuffer(
+    gl: WebGLRenderingContext,
+    program: WebGLProgram,
+    programVar: string
+  ): WebGLBuffer {
+    const texturePosBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, texturePosBuffer);
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 0, 0, 0, 1, 1, 0, 1]), gl.STATIC_DRAW);
+
+    const texturePosRef = gl.getAttribLocation(program, programVar);
+    gl.enableVertexAttribArray(texturePosRef);
+    gl.vertexAttribPointer(texturePosRef, 2, gl.FLOAT, false, 0, 0);
+
+    return texturePosBuffer!;
+  }
+
+  /**
+   * Create and configure a single texture
+   */
+  private static createTexture(gl: WebGLRenderingContext): WebGLTexture {
+    const textureRef = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, textureRef);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+    return textureRef!;
   }
 
   /**
    * Initialize GL shader program
    */
-  static createProgram(gl: WebGLRenderingContext): WebGLProgram {
+  private static createProgram(gl: WebGLRenderingContext): WebGLProgram {
     // vertex shader is the same for all types
     const vertexShaderScript = `
       attribute vec4 vertexPos;
-      attribute vec4 texturePos;
+      attribute vec4 yTexturePos;
       attribute vec4 uTexturePos;
       attribute vec4 vTexturePos;
-      varying vec2 textureCoord;
+      varying vec2 yTextureCoord;
       varying vec2 uTextureCoord;
       varying vec2 vTextureCoord;
 
       void main()
       {
         gl_Position = vertexPos;
-        textureCoord = texturePos.xy;
+        yTextureCoord = yTexturePos.xy;
         uTextureCoord = uTexturePos.xy;
         vTextureCoord = vTexturePos.xy;
       }
@@ -192,7 +204,7 @@ export class WebGLCanvas {
 
     const fragmentShaderScript = `
       precision highp float;
-      varying highp vec2 textureCoord;
+      varying highp vec2 yTextureCoord;
       varying highp vec2 uTextureCoord;
       varying highp vec2 vTextureCoord;
       uniform sampler2D ySampler;
@@ -201,7 +213,7 @@ export class WebGLCanvas {
       uniform mat4 YUV2RGB;
 
       void main(void) {
-        highp float y = texture2D(ySampler,  textureCoord).r;
+        highp float y = texture2D(ySampler,  yTextureCoord).r;
         highp float u = texture2D(uSampler,  uTextureCoord).r;
         highp float v = texture2D(vSampler,  vTextureCoord).r;
         gl_FragColor = vec4(y, u, v, 1) * YUV2RGB;
@@ -245,106 +257,4 @@ export class WebGLCanvas {
     return program!;
   }
 
-  /**
-   * Initialize vertex buffers and attach to shader program
-   */
-  initBuffers() {
-    const gl = this.contextGL;
-    const program = this.shaderProgram;
-
-    const vertexPosBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vertexPosBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 1, -1, 1, 1, -1, -1, -1]), gl.STATIC_DRAW);
-
-    const vertexPosRef = gl.getAttribLocation(program, 'vertexPos');
-    gl.enableVertexAttribArray(vertexPosRef);
-    gl.vertexAttribPointer(vertexPosRef, 2, gl.FLOAT, false, 0, 0);
-
-    if (this.animationTime) {
-
-      const animationTime = this.animationTime;
-      let timePassed = 0;
-      const stepTime = 15;
-
-      const aniFun = () => {
-
-        timePassed += stepTime;
-        let mul = (1 * timePassed) / animationTime;
-
-        if (timePassed >= animationTime) {
-          mul = 1;
-        }
-        else {
-          setTimeout(aniFun, stepTime);
-        }
-
-        const neg = -1 * mul;
-        const pos = 1 * mul;
-
-        gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([pos, pos, neg, pos, pos, neg, neg, neg]), gl.STATIC_DRAW);
-
-        const vertexPos = gl.getAttribLocation(program, 'vertexPos');
-        gl.enableVertexAttribArray(vertexPos);
-        gl.vertexAttribPointer(vertexPos, 2, gl.FLOAT, false, 0, 0);
-
-        try {
-          gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-        }
-        catch (e) {
-          console.error(e);
-        }
-      };
-      aniFun();
-    }
-
-    const texturePosBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, texturePosBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 0, 0, 0, 1, 1, 0, 1]), gl.STATIC_DRAW);
-
-    const texturePosRef = gl.getAttribLocation(program, 'texturePos');
-    gl.enableVertexAttribArray(texturePosRef);
-    gl.vertexAttribPointer(texturePosRef, 2, gl.FLOAT, false, 0, 0);
-
-    this.texturePosBuffer = texturePosBuffer!;
-
-    const uTexturePosBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, uTexturePosBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 0, 0, 0, 1, 1, 0, 1]), gl.STATIC_DRAW);
-
-    const uTexturePosRef = gl.getAttribLocation(program, 'uTexturePos');
-    gl.enableVertexAttribArray(uTexturePosRef);
-    gl.vertexAttribPointer(uTexturePosRef, 2, gl.FLOAT, false, 0, 0);
-
-    this.uTexturePosBuffer = uTexturePosBuffer!;
-
-
-    const vTexturePosBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, vTexturePosBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([1, 0, 0, 0, 1, 1, 0, 1]), gl.STATIC_DRAW);
-
-    const vTexturePosRef = gl.getAttribLocation(program, 'vTexturePos');
-    gl.enableVertexAttribArray(vTexturePosRef);
-    gl.vertexAttribPointer(vTexturePosRef, 2, gl.FLOAT, false, 0, 0);
-
-    this.vTexturePosBuffer = vTexturePosBuffer!;
-  }
-
-
-  /**
-   * Create and configure a single texture
-   */
-  initTexture() {
-    const gl = this.contextGL;
-
-    const textureRef = gl.createTexture();
-    gl.bindTexture(gl.TEXTURE_2D, textureRef);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.bindTexture(gl.TEXTURE_2D, null);
-
-    return textureRef!;
-  }
 }

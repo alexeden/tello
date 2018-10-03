@@ -8,7 +8,7 @@ const h264Player = new Player({
 
 document.getElementById('videoFeed')!.appendChild(h264Player.canvas);
 
-const toUint8Array = str => {
+const toUint8Array = (str: string) => {
   const array = new Uint8Array(new ArrayBuffer(str.length));
   let i;
   for (i = 0; i < str.length; i++) {

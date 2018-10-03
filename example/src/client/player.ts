@@ -1,27 +1,5 @@
 import { WebGLCanvas } from './webgl-canvas';
 
-/**
- * from testing...
- * render: true,
- * webgl: true,
- * {
- *   "useWorker": true,
- *   "workerFile": "Decoder.js",
- *   "webgl": "auto",
- *   "size": {
- *     "width": 960,
- *     "height": 720
- *   }
- * }
- * // canvas property represents the canvas node
- * // put it somewhere in the dom
- * p.canvas;
- *
- * p.webgl; // contains the used rendering mode. if you pass auto to webgl you can see what auto detection resulted in
- *
- * p.decode(<binary>);
- */
-
 interface Size {
   height: number;
   width: number;
@@ -38,12 +16,12 @@ interface Frame extends Size {
 
 export class Player {
   private readonly worker: Worker;
-  nowValue: number;
-  webgl = true;
-  size: Size;
-  workerFile: string;
+  private readonly webGLCanvas: WebGLCanvas;
+  readonly workerFile: string;
   readonly canvas: HTMLCanvasElement;
-  readonly webGLCanvas: WebGLCanvas;
+
+  nowValue: number;
+  size: Size;
 
   constructor(options: PlayerOptions) {
     this.nowValue = performance.now();
@@ -65,6 +43,7 @@ export class Player {
     // provide size
     this.worker = new Worker(this.workerFile);
     this.worker.addEventListener('message', e => {
+      (window as any).workerMessageEvent = e;
       const data = e.data;
       if (data.consoleLog) {
         console.log(data.consoleLog);
@@ -95,17 +74,17 @@ export class Player {
     });
   }
 
-  decode(parData, parInfo = {}) {
+  decode(data: Uint8Array, info: any = {}) {
     // Copy the sample so that we only do a structured clone of the region of interest
-    const copyU8 = new Uint8Array(parData.length);
-    copyU8.set(parData, 0);
+    const copyU8 = new Uint8Array(data.length);
+    copyU8.set(data, 0);
     const message = {
       buf: copyU8.buffer,
+      length: data.length,
       offset: 0,
-      length: parData.length,
-      info: parInfo,
+      info,
     };
-    this.worker.postMessage(message, [copyU8.buffer]); // Send data to our worker.
+    this.worker.postMessage(message, [copyU8.buffer]);
   }
 
   static createCanvas({ height, width }: Size, bgColor = '#0D0E1B'): HTMLCanvasElement {
@@ -116,24 +95,7 @@ export class Player {
     return canvas;
   }
 
-  renderFrame({ buffer, height, width }: Frame) {
-
-    // const canvasObj = frame.canvasObj;
-
-    // const width = frame.width || canvasObj.canvas.width;
-    // const height = frame.height || canvasObj.canvas.height;
-
-    // if (canvasObj.canvas.width !== width || canvasObj.canvas.height !== height || !canvasObj.webGLCanvas) {
-    //   canvasObj.canvas.width = width;
-    //   canvasObj.canvas.height = height;
-    //   canvasObj.webGLCanvas = new WebGLCanvas({
-    //     canvas: canvasObj.canvas,
-    //     contextOptions: canvasObj.contextOptions,
-    //     width,
-    //     height,
-    //   });
-    // }
-
+  private renderFrame({ buffer, height, width }: Frame) {
     const ylen = width * height;
     const uvlen = (width / 2) * (height / 2);
 
