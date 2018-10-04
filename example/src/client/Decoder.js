@@ -1,14 +1,14 @@
-/**
- * options.rgb = false
- * sliceMode = false
- */
-
 const noop = () => undefined;
-const TOTAL_STACK = 5242880;
-const TOTAL_MEMORY = 52428800;
+const TOTAL_STACK = 0x500000;
+const TOTAL_MEMORY = 0x3200000;
+const STACK_BASE = 0x2ab0;
 const STACK_ALIGN = 16;
 const GLOBAL_BASE = 1024;
 const WASM_PAGE_SIZE = 65536;
+const STACKTOP = 0x2ac0; // GLOBAL_BASE + 9888 + 16;
+const STACK_MAX = STACK_BASE + TOTAL_STACK;
+const DYNAMIC_BASE = Math.ceil(STACK_MAX / 16) * 16;
+const DYNAMICTOP_PTR = 0x2ab0;
 const assert = (condition, text) => {
   if (!condition) {
     abort("Assertion failed: " + text)
@@ -51,40 +51,14 @@ const abort = what => {
    */
   var getModule = function (onHeadersDecoded, par_broadwayOnPictureDecoded) {
     const Module = {};
-    console.log(Module);
-
-    var staticSealed = false;
     const HEAPU8 = new Uint8Array(wasmMemory.buffer);
     const HEAP16 = new Int16Array(wasmMemory.buffer);
     const HEAP32 = new Int32Array(wasmMemory.buffer);
     Module.HEAPU8 = HEAPU8;
-    var STATICTOP = 0;
-    var STACK_BASE = 0;
-    var STACKTOP = 0;
-    var STACK_MAX = 0;
-    var DYNAMIC_BASE = 0;
-    var DYNAMICTOP_PTR = 0;
     HEAP32[0] = 1668509029;
     HEAP16[1] = 25459;
-    if (HEAPU8[2] !== 115 || HEAPU8[3] !== 99) throw 'Runtime error: expected the system to be little-endian!';
-
-    const staticAlloc = size => {
-      console.log('staticAlloc');
-      assert(!staticSealed);
-      var ret = STATICTOP;
-      STATICTOP = STATICTOP + size + 15 & -16;
-      return ret;
-    };
-
-    STATICTOP = GLOBAL_BASE + 9888 + 16;
-    DYNAMICTOP_PTR = staticAlloc(4);
-    STACKTOP = Math.ceil((GLOBAL_BASE + 9888 + 16) / 16) * 16;
-    STACK_BASE = STACKTOP;
-    STACK_MAX = STACK_BASE + TOTAL_STACK;
-    DYNAMIC_BASE = Math.ceil(STACK_MAX / 16) * 16;
     HEAP32[DYNAMICTOP_PTR >> 2] = DYNAMIC_BASE;
-    staticSealed = true;
-
+    if (HEAPU8[2] !== 115 || HEAPU8[3] !== 99) throw 'Runtime error: expected the system to be little-endian!';
     var runDependencies = 0;
     var runDependencyWatcher = null;
     var dependenciesFulfilled = null;
@@ -131,6 +105,7 @@ const abort = what => {
     };
 
     function ___syscall146(which, varargs) {
+      console.log('___syscall146', varargs);
       SYSCALLS.varargs = varargs;
       try {
         var stream = SYSCALLS.get();
@@ -190,6 +165,7 @@ const abort = what => {
         },
         ___syscall146,
         ___syscall54(which, varargs) {
+          console.log('___syscall54', varargs);
           SYSCALLS.varargs = varargs;
           return 0;
         },
