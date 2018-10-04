@@ -1,3 +1,10 @@
+/**
+ * options.rgb = false
+ * sliceMode = false
+ */
+
+const noop = () => undefined;
+
 // universal module definition
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -18,79 +25,50 @@
 
   const global = self;
   console.log('global: ', global);
-
+  /**
+   * The reason why this is all packed into one file is that this file can also function as worker.
+   * you can integrate the file into your build system and provide the original file to be loaded into a worker.
+   */
   var getModule = function (par_broadwayOnHeadersDecoded, par_broadwayOnPictureDecoded) {
-
-    /*var ModuleX = {
-      'print': function(text) { console.log('stdout: ' + text); },
-      'printErr': function(text) { console.log('stderr: ' + text); }
-    };*/
-
-    /*
-
-      The reason why this is all packed into one file is that this file can also function as worker.
-      you can integrate the file into your build system and provide the original file to be loaded into a worker.
-
-    */
-
-    //var Module = (function(){
-
-    var Module = typeof Module !== "undefined" ? Module : {};
+    var Module = {}
     console.log(Module);
-    var moduleOverrides = {};
-    var key;
-    for (key in Module) {
-      if (Module.hasOwnProperty(key)) {
-        moduleOverrides[key] = Module[key]
-      }
-    }
     Module.arguments = [];
     Module.thisProgram = "./this.program";
-    Module.quit = (function (status, toThrow) {
-      throw toThrow
-    });
+    Module.quit = (status, toThrow) => { throw toThrow };
     Module.preRun = [];
     Module.postRun = [];
-    Module.read = function shell_read(url) {
+    Module.read = url => {
       var xhr = new XMLHttpRequest;
       xhr.open("GET", url, false);
       xhr.send(null);
-      return xhr.responseText
+      return xhr.responseText;
     };
-    Module.readBinary = function readBinary(url) {
+    Module.readBinary = url => {
       var xhr = new XMLHttpRequest;
       xhr.open("GET", url, false);
       xhr.responseType = "arraybuffer";
       xhr.send(null);
-      return new Uint8Array(xhr.response)
-    }
-    Module.readAsync = function readAsync(url, onload, onerror) {
+      return new Uint8Array(xhr.response);
+    };
+    Module.readAsync = (url, onload, onerror) => {
       var xhr = new XMLHttpRequest;
       xhr.open("GET", url, true);
       xhr.responseType = "arraybuffer";
-      xhr.onload = function xhr_onload() {
-        if (xhr.status == 200 || xhr.status == 0 && xhr.response) {
+      xhr.onload = () => {
+        if (xhr.status === 200 || xhr.status === 0 && xhr.response) {
           onload(xhr.response);
-          return
+          return;
         }
-        onerror()
+        onerror();
       };
       xhr.onerror = onerror;
-      xhr.send(null)
+      xhr.send(null);
     };
-    Module.setWindowTitle = (function (title) {
-      document.title = title
-    });
+    Module.setWindowTitle = title => document.title = title;
     Module.print = typeof console !== "undefined" ? console.log.bind(console) : typeof print !== "undefined" ? print : null;
     Module.printErr = typeof printErr !== "undefined" ? printErr : typeof console !== "undefined" && console.warn.bind(console) || Module.print;
     Module.print = Module.print;
     Module.printErr = Module.printErr;
-    for (key in moduleOverrides) {
-      if (moduleOverrides.hasOwnProperty(key)) {
-        Module[key] = moduleOverrides[key]
-      }
-    }
-    moduleOverrides = undefined;
     var STACK_ALIGN = 16;
 
     const staticAlloc = size => {
@@ -101,12 +79,8 @@
     };
 
     var asm2wasmImports = {
-      "f64-rem": (function (x, y) {
-        return x % y
-      }),
-      "debugger": (function () {
-        debugger
-      })
+      "f64-rem": (x, y) => x % y,
+      "debugger": () => { debugger },
     };
     var functionPointers = new Array(0);
     var GLOBAL_BASE = 1024;
@@ -126,9 +100,9 @@
       while (1) {
         t = HEAPU8[ptr + i >> 0];
         hasUtf |= t;
-        if (t == 0 && !length) break;
+        if (t === 0 && !length) break;
         i++;
-        if (length && i == length) break
+        if (length && i === length) break
       }
       if (!length) length = i;
       var ret = "";
@@ -164,22 +138,22 @@
             continue
           }
           u1 = u8Array[idx++] & 63;
-          if ((u0 & 224) == 192) {
+          if ((u0 & 224) === 192) {
             str += String.fromCharCode((u0 & 31) << 6 | u1);
             continue
           }
           u2 = u8Array[idx++] & 63;
-          if ((u0 & 240) == 224) {
+          if ((u0 & 240) === 224) {
             u0 = (u0 & 15) << 12 | u1 << 6 | u2
           }
           else {
             u3 = u8Array[idx++] & 63;
-            if ((u0 & 248) == 240) {
+            if ((u0 & 248) === 240) {
               u0 = (u0 & 7) << 18 | u1 << 12 | u2 << 6 | u3
             }
             else {
               u4 = u8Array[idx++] & 63;
-              if ((u0 & 252) == 248) {
+              if ((u0 & 252) === 248) {
                 u0 = (u0 & 3) << 24 | u1 << 18 | u2 << 12 | u3 << 6 | u4
               }
               else {
@@ -201,7 +175,6 @@
 
     const UTF8ToString = ptr => UTF8ArrayToString(HEAPU8, ptr);
 
-    var UTF16Decoder = typeof TextDecoder !== "undefined" ? new TextDecoder("utf-16le") : undefined;
     var WASM_PAGE_SIZE = 65536;
     var ASMJS_PAGE_SIZE = 16777216;
 
@@ -212,7 +185,15 @@
       return x;
     };
 
-    var buffer, HEAP8, HEAPU8, HEAP16, HEAPU16, HEAP32, HEAPU32, HEAPF32, HEAPF64;
+    var buffer;
+    var HEAP8;
+    var HEAPU8;
+    var HEAP16;
+    var HEAPU16;
+    var HEAP32;
+    var HEAPU32;
+    var HEAPF32;
+    var HEAPF64;
 
     const updateGlobalBuffer = buf => Module.buffer = buffer = buf;
 
@@ -226,11 +207,14 @@
       Module.HEAPF32 = HEAPF32 = new Float32Array(buffer);
       Module.HEAPF64 = HEAPF64 = new Float64Array(buffer);
     };
-    var STATIC_BASE, STATICTOP, staticSealed;
-    var STACK_BASE, STACKTOP, STACK_MAX;
-    var DYNAMIC_BASE, DYNAMICTOP_PTR;
-    STATIC_BASE = STATICTOP = STACK_BASE = STACKTOP = STACK_MAX = DYNAMIC_BASE = DYNAMICTOP_PTR = 0;
-    staticSealed = false;
+    var STATIC_BASE = 0;
+    var STATICTOP = 0;
+    var STACK_BASE = 0;
+    var STACKTOP = 0;
+    var STACK_MAX = 0;
+    var DYNAMIC_BASE = 0;
+    var DYNAMICTOP_PTR = 0;
+    var staticSealed = false;
 
     function abortOnCannotGrowMemory() {
       abort("Cannot enlarge memory arrays. Either (1) compile with  -s TOTAL_MEMORY=X  with X higher than the current value " + TOTAL_MEMORY + ", (2) compile with  -s ALLOW_MEMORY_GROWTH=1  which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with  -s ABORTING_MALLOC=0 ")
@@ -245,17 +229,12 @@
       buffer = Module.buffer
     }
     else {
-      if (typeof WebAssembly === "object" && typeof WebAssembly.Memory === "function") {
-        Module.wasmMemory = new WebAssembly.Memory({
-          "initial": TOTAL_MEMORY / WASM_PAGE_SIZE,
-          "maximum": TOTAL_MEMORY / WASM_PAGE_SIZE
-        });
-        buffer = Module.wasmMemory.buffer
-      }
-      else {
-        buffer = new ArrayBuffer(TOTAL_MEMORY)
-      }
-      Module.buffer = buffer
+      Module.wasmMemory = new WebAssembly.Memory({
+        initial: TOTAL_MEMORY / WASM_PAGE_SIZE,
+        maximum: TOTAL_MEMORY / WASM_PAGE_SIZE,
+      });
+      buffer = Module.wasmMemory.buffer;
+      Module.buffer = buffer;
     }
     updateGlobalBufferViews();
 
@@ -268,7 +247,7 @@
     const callRuntimeCallbacks = callbacks => {
       while (callbacks.length > 0) {
         var callback = callbacks.shift();
-        if (typeof callback == "function") {
+        if (typeof callback === "function") {
           callback();
           continue
         }
@@ -292,7 +271,6 @@
     var __ATEXIT__ = [];
     var __ATPOSTRUN__ = [];
     var runtimeInitialized = false;
-    var runtimeExited = false;
 
     const preRun = () => {
       if (Module.preRun) {
@@ -319,7 +297,7 @@
 
     const postRun = () => {
       if (Module.postRun) {
-        if (typeof Module.postRun == "function") Module.postRun = [Module.postRun];
+        if (typeof Module.postRun === "function") Module.postRun = [Module.postRun];
         while (Module.postRun.length) {
           addOnPostRun(Module.postRun.shift());
         }
@@ -347,7 +325,7 @@
       if (Module.monitorRunDependencies) {
         Module.monitorRunDependencies(runDependencies)
       }
-      if (runDependencies == 0) {
+      if (runDependencies === 0) {
         if (runDependencyWatcher !== null) {
           clearInterval(runDependencyWatcher);
           runDependencyWatcher = null
@@ -424,18 +402,10 @@
       }
 
       const doNativeWasm = (global, env, providedBuffer) => {
-        if (typeof WebAssembly !== "object") {
-          Module.printErr("no native wasm support detected");
-          return false
-        }
-        if (!(Module.wasmMemory instanceof WebAssembly.Memory)) {
-          Module.printErr("no native wasm Memory in use");
-          return false
-        }
         env["memory"] = Module.wasmMemory;
         info["global"] = {
-          "NaN": NaN,
-          "Infinity": Infinity
+          NaN: NaN,
+          Infinity: Infinity,
         };
         info["global.Math"] = Math;
         info["env"] = env;
@@ -560,35 +530,29 @@
     STATICTOP += 16;
     var SYSCALLS = {
       varargs: 0,
-      get: (function (varargs) {
+      get: () => {
         SYSCALLS.varargs += 4;
-        var ret = HEAP32[SYSCALLS.varargs - 4 >> 2];
-        return ret
-      }),
-      getStr: (function () {
-        var ret = Pointer_stringify(SYSCALLS.get());
-        return ret
-      }),
-      get64: (function () {
-        var low = SYSCALLS.get(),
-          high = SYSCALLS.get();
+        return HEAP32[SYSCALLS.varargs - 4 >> 2];
+      },
+      getStr: () => Pointer_stringify(SYSCALLS.get()),
+      get64: () => {
+        const low = SYSCALLS.get();
+        const high = SYSCALLS.get();
         if (low >= 0) assert(high === 0);
         else assert(high === -1);
-        return low
-      }),
-      getZero: (function () {
-        assert(SYSCALLS.get() === 0)
-      })
+        return low;
+      },
+      getZero: () => assert(SYSCALLS.get() === 0),
     };
 
     function ___syscall140(which, varargs) {
       SYSCALLS.varargs = varargs;
       try {
-        var stream = SYSCALLS.getStreamFromFD(),
-          offset_high = SYSCALLS.get(),
-          offset_low = SYSCALLS.get(),
-          result = SYSCALLS.get(),
-          whence = SYSCALLS.get();
+        var stream = SYSCALLS.getStreamFromFD();
+        var offset_high = SYSCALLS.get();
+        var offset_low = SYSCALLS.get();
+        var result = SYSCALLS.get();
+        var whence = SYSCALLS.get();
         var offset = offset_low;
         FS.llseek(stream, offset, whence);
         HEAP32[result >> 2] = stream.position;
@@ -604,9 +568,9 @@
     function ___syscall146(which, varargs) {
       SYSCALLS.varargs = varargs;
       try {
-        var stream = SYSCALLS.get(),
-          iov = SYSCALLS.get(),
-          iovcnt = SYSCALLS.get();
+        var stream = SYSCALLS.get();
+        var iov = SYSCALLS.get();
+        var iovcnt = SYSCALLS.get();
         var ret = 0;
         if (!___syscall146.buffers) {
           ___syscall146.buffers = [null, [],
@@ -804,7 +768,7 @@
     }
     Module.abort = abort;
     if (Module.preInit) {
-      if (typeof Module.preInit == "function") Module.preInit = [Module.preInit];
+      if (typeof Module.preInit === "function") Module.preInit = [Module.preInit];
       while (Module.preInit.length > 0) {
         Module.preInit.pop()()
       }
@@ -855,19 +819,13 @@
 
     var Decoder = function (parOptions) {
       console.log(this);
-
       this.options = parOptions || {};
-
       this.now = nowValue;
-
       var asmInstance;
-
       var fakeWindow = {};
-
       var toU8Array;
-      var toU32Array;
 
-      var onPicFun = function ($buffer, width, height) {
+      var onPicFun = ($buffer, width, height) => {
         var buffer = this.pictureBuffers[$buffer];
         if (!buffer) {
           buffer = this.pictureBuffers[$buffer] = toU8Array($buffer, (width * height * 3) / 2);
@@ -881,54 +839,29 @@
         };
         this.infoAr = [];
 
-        if (this.options.rgb) {
-          if (!asmInstance) {
-            asmInstance = getAsm(width, height);
-          };
-          asmInstance.inp.set(buffer);
-          asmInstance.doit();
-
-          var copyU8 = new Uint8Array(asmInstance.outSize);
-          copyU8.set(asmInstance.out);
-
-          if (doInfo) {
-            infos[0].finishDecoding = nowValue();
-          };
-
-          this.onPictureDecoded(copyU8, width, height, infos);
-          return;
-
-        };
-
         if (doInfo) {
           infos[0].finishDecoding = nowValue();
         };
         this.onPictureDecoded(buffer, width, height, infos);
-      }.bind(this);
+      };
 
-      var ignore = false;
-
-      var ModuleCallback = getModule.apply(fakeWindow, [function () {}, onPicFun]);
+      var ModuleCallback = getModule.apply(fakeWindow, [noop, onPicFun]);
 
       var MAX_STREAM_BUFFER_LENGTH = 1024 * 1024;
 
-      var instance = this;
       this.onPictureDecoded = function (buffer, width, height, infos) {
 
       };
 
-      this.onDecoderReady = function () {};
+      this.onDecoderReady = noop;
 
       var bufferedCalls = [];
       this.decode = function decode(typedAr, parInfo, copyDoneFun) {
         bufferedCalls.push([typedAr, parInfo, copyDoneFun]);
       };
 
-      ModuleCallback(function (Module) {
-        var HEAP8 = Module.HEAP8;
+      ModuleCallback(Module => {
         var HEAPU8 = Module.HEAPU8;
-        var HEAP16 = Module.HEAP16;
-        var HEAP32 = Module.HEAP32;
         // from old constructor
         Module._broadwayInit();
 
@@ -942,10 +875,10 @@
           //var tmp = HEAPU8.subarray(ptr, ptr + (length * 4));
           return new Uint32Array(HEAPU8.buffer, ptr, length);
         };
-        instance.streamBuffer = toU8Array(Module._broadwayCreateStream(MAX_STREAM_BUFFER_LENGTH), MAX_STREAM_BUFFER_LENGTH);
-        instance.pictureBuffers = {};
+        this.streamBuffer = toU8Array(Module._broadwayCreateStream(MAX_STREAM_BUFFER_LENGTH), MAX_STREAM_BUFFER_LENGTH);
+        this.pictureBuffers = {};
         // collect extra infos that are provided with the nal units
-        instance.infoAr = [];
+        this.infoAr = [];
 
         /**
          * Decodes a stream buffer. This may be one single (unframed) NAL unit without the
@@ -953,16 +886,13 @@
          * function overwrites stream buffer allocated by the codec with the supplied buffer.
          */
 
-        var sliceNum = 0;
-        instance.decode = function decode(typedAr, parInfo) {
-          // console.info("Decoding: " + buffer.length);
-          // collect infos
+        this.decode = (typedAr, parInfo) => {
           if (parInfo) {
-            instance.infoAr.push(parInfo);
+            this.infoAr.push(parInfo);
             parInfo.startDecoding = nowValue();
           };
 
-          instance.streamBuffer.set(typedAr);
+          this.streamBuffer.set(typedAr);
           Module._broadwayPlayStream(typedAr.length);
         };
 
@@ -970,12 +900,12 @@
         if (bufferedCalls.length) {
           var bi = 0;
           for (bi = 0; bi < bufferedCalls.length; ++bi) {
-            instance.decode(bufferedCalls[bi][0], bufferedCalls[bi][1], bufferedCalls[bi][2]);
+            this.decode(bufferedCalls[bi][0], bufferedCalls[bi][1], bufferedCalls[bi][2]);
           };
           bufferedCalls = [];
         };
 
-        instance.onDecoderReady(instance);
+        this.onDecoderReady(this);
 
       });
 
@@ -1022,7 +952,7 @@
         decoder.decode(
           new Uint8Array(e.data.buf, e.data.offset || 0, e.data.length),
           e.data.info,
-          () => undefined
+          noop
         );
       }
       else {
