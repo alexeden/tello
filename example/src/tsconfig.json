@@ -11,7 +11,8 @@
     "forceConsistentCasingInFileNames": false,
     "lib": [
       "dom",
-      "esnext"
+      "esnext",
+      "webworker"
     ],
     "module": "commonjs",
     "moduleResolution": "node",
@@ -26,7 +27,9 @@
     "suppressImplicitAnyIndexErrors": false,
     "strictPropertyInitialization": true,
     "types": [
-      "node"
+      "node",
+      "webassembly-js-api",
+      "webassembly-web-api"
     ],
     "target": "esnext"
   }
