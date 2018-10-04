@@ -2,8 +2,6 @@ const noop = () => undefined;
 const TOTAL_STACK = 0x500000;
 const TOTAL_MEMORY = 0x3200000;
 const STACK_BASE = 0x2ab0;
-const STACK_ALIGN = 16;
-const GLOBAL_BASE = 1024;
 const WASM_PAGE_SIZE = 65536;
 const STACKTOP = 0x2ac0; // GLOBAL_BASE + 9888 + 16;
 const STACK_MAX = STACK_BASE + TOTAL_STACK;
@@ -41,15 +39,33 @@ const abort = what => {
     root.Decoder = factory();
   }
 }(this, function () {
-  const wasmMemory = new WebAssembly.Memory({
-    initial: TOTAL_MEMORY / WASM_PAGE_SIZE,
-    maximum: TOTAL_MEMORY / WASM_PAGE_SIZE,
-  });
+  const startWasm = async importObject => {
+    try {
+      const wasmFile = fetch('avc.wasm', { credentials: 'same-origin' });
+      return WebAssembly.instantiateStreaming(wasmFile, importObject);
+    }
+    catch (e) {
+      console.error('Failed to instantiate the WebAssembly module', e);
+      abort(e);
+    }
+  };
+
   /**
    * The reason why this is all packed into one file is that this file can also function as worker.
    * you can integrate the file into your build system and provide the original file to be loaded into a worker.
    */
-  var getModule = function (onHeadersDecoded, par_broadwayOnPictureDecoded) {
+  const getModule = async (onHeadersDecoded, onPictureDecoded) => {
+    const wasmMemory = new WebAssembly.Memory({
+      initial: TOTAL_MEMORY / WASM_PAGE_SIZE,
+      maximum: TOTAL_MEMORY / WASM_PAGE_SIZE,
+    });
+
+    const wasmTable = new WebAssembly.Table({
+      initial: 10,
+      maximum: 10,
+      element: 'anyfunc',
+    });
+
     const Module = {};
     const HEAPU8 = new Uint8Array(wasmMemory.buffer);
     const HEAP16 = new Int16Array(wasmMemory.buffer);
@@ -59,42 +75,6 @@ const abort = what => {
     HEAP16[1] = 25459;
     HEAP32[DYNAMICTOP_PTR >> 2] = DYNAMIC_BASE;
     if (HEAPU8[2] !== 115 || HEAPU8[3] !== 99) throw 'Runtime error: expected the system to be little-endian!';
-    var runDependencies = 0;
-    var runDependencyWatcher = null;
-    var dependenciesFulfilled = null;
-
-    const addRunDependency = () => runDependencies++;
-
-    const removeRunDependency = () => {
-      runDependencies--;
-      if (runDependencies === 0) {
-        if (runDependencyWatcher !== null) {
-          clearInterval(runDependencyWatcher);
-          runDependencyWatcher = null
-        }
-        if (dependenciesFulfilled) {
-          var callback = dependenciesFulfilled;
-          dependenciesFulfilled = null;
-          callback()
-        }
-      }
-    }
-
-    const startWasm = importObject => {
-      addRunDependency("wasm-instantiate");
-      const wasmFile = fetch('avc.wasm', { credentials: 'same-origin' });
-
-      WebAssembly.instantiateStreaming(wasmFile, importObject)
-        .then(({ instance, module }) => {
-          console.log('exports: ', instance.exports);
-          Module.asm = instance.exports;
-          removeRunDependency("wasm-instantiate");
-        })
-        .catch(reason => {
-          console.warn("wasm streaming compile failed: " + reason);
-          console.warn("falling back to ArrayBuffer instantiation");
-        });
-    };
 
     const SYSCALLS = {
       varargs: 0,
@@ -108,52 +88,38 @@ const abort = what => {
       console.log('___syscall146', varargs);
       SYSCALLS.varargs = varargs;
       try {
-        var stream = SYSCALLS.get();
-        var iov = SYSCALLS.get();
-        var iovcnt = SYSCALLS.get();
-        var ret = 0;
+        const stream = SYSCALLS.get();
+        const iov = SYSCALLS.get();
+        const iovcnt = SYSCALLS.get();
         if (!___syscall146.buffers) {
-          ___syscall146.buffers = [null, [],
-            []
-          ];
-          ___syscall146.printChar = (function (stream, curr) {
-            var buffer = ___syscall146.buffers[stream];
+          ___syscall146.buffers = [null, [], []];
+          ___syscall146.printChar = (stream, curr) => {
+            const buffer = ___syscall146.buffers[stream];
             assert(buffer);
-            if (curr === 0 || curr === 10) {
-              (stream === 1 ? console.log : console.warn)(UTF8ArrayToString(buffer, 0));
-              buffer.length = 0
-            }
-            else {
-              buffer.push(curr)
-            }
-          })
+            if (curr === 0 || curr === 10) buffer.length = 0;
+            else buffer.push(curr);
+          };
         }
-        for (var i = 0; i < iovcnt; i++) {
-          var ptr = HEAP32[iov + i * 8 >> 2];
-          var len = HEAP32[iov + (i * 8 + 4) >> 2];
-          for (var j = 0; j < len; j++) {
-            ___syscall146.printChar(stream, HEAPU8[ptr + j])
-          }
-          ret += len
+        let ret = 0;
+        for (let i = 0; i < iovcnt; i++) {
+          const ptr = HEAP32[iov + i * 8 >> 2];
+          const len = HEAP32[iov + (i * 8 + 4) >> 2];
+          for (let j = 0; j < len; j++) ___syscall146.printChar(stream, HEAPU8[ptr + j]);
+          ret += len;
         }
         return ret
       }
       catch (e) {
-        if (typeof FS === "undefined" || !(e instanceof FS.ErrnoError)) abort(e);
-        return -e.errno
+        abort(e);
       }
     }
 
-    var wasm = startWasm({
+    const wasmInstance = await startWasm({
       global: {},
       env: {
         memory: wasmMemory,
+        table: wasmTable,
         tableBase: 0,
-        table: new WebAssembly.Table({
-          initial: 10,
-          maximum: 10,
-          element: 'anyfunc',
-        }),
         abort,
         enlargeMemory: () => abort(`Cannot enlarge memory arrays. Either (1) compile with  -s TOTAL_MEMORY=X  with X higher than the current value ${TOTAL_MEMORY}, (2) compile with  -s ALLOW_MEMORY_GROWTH=1  which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with  -s ABORTING_MALLOC=0 `),
         getTotalMemory: () => TOTAL_MEMORY,
@@ -174,63 +140,28 @@ const abort = what => {
           abort('__syscall6 invoked despite no access to file descriptors on this system');
         },
         _broadwayOnHeadersDecoded: noop,
-        _broadwayOnPictureDecoded: par_broadwayOnPictureDecoded,
+        _broadwayOnPictureDecoded: onPictureDecoded,
         _emscripten_memcpy_big(dest, src, num) {
           HEAPU8.set(HEAPU8.subarray(src, src + num), dest);
-          return dest
+          return dest;
         },
         DYNAMICTOP_PTR,
         STACKTOP,
       },
     });
-    Module.asm = wasm;
-    Module._broadwayCreateStream = (...args) => Module.asm._broadwayCreateStream(...args);
-    Module._broadwayExit = (...args) => Module.asm._broadwayExit(...args);
-    Module._broadwayGetMajorVersion = (...args) => Module.asm._broadwayGetMajorVersion(...args);
-    Module._broadwayGetMinorVersion = (...args) => Module.asm._broadwayGetMinorVersion(...args);
-    Module._broadwayInit = (...args) => Module.asm._broadwayInit(...args);
-    Module._broadwayPlayStream = (...args) => Module.asm._broadwayPlayStream(...args);
-
-    dependenciesFulfilled = function runCaller() {
-      if (!Module.calledRun) run();
-      if (!Module.calledRun) dependenciesFulfilled = runCaller
-    };
-
-    var moduleIsReady = false;
-    var finalCallback;
-
-    function run() {
-      if (runDependencies > 0) return;
-      if (Module.calledRun) return;
-      Module.calledRun = true;
-      moduleIsReady = true;
-      if (finalCallback) {
-        finalCallback(Module);
-      }
-    }
-
-    run();
-
-    return function (callback) {
-      if (moduleIsReady) {
-        callback(Module);
-      }
-      else {
-        finalCallback = callback;
-      };
-    };
+    console.log(wasmInstance);
+    Object.assign(Module, wasmInstance.instance.exports);
+    return Module;
   };
   // END getModule()
 
 
   return (() => {
 
-    var nowValue = () => performance.now();
-
     var Decoder = function (parOptions) {
       console.log(this);
       this.options = parOptions || {};
-      this.now = nowValue;
+      this.now = () => performance.now();
       var toU8Array;
 
       var onPicFun = ($buffer, width, height) => {
@@ -248,12 +179,11 @@ const abort = what => {
         this.infoAr = [];
 
         if (doInfo) {
-          infos[0].finishDecoding = nowValue();
+          infos[0].finishDecoding = this.now();
         };
         this.onPictureDecoded(buffer, width, height, infos);
       };
 
-      var ModuleCallback = getModule(noop, onPicFun);
 
       var MAX_STREAM_BUFFER_LENGTH = 1024 * 1024;
 
@@ -268,7 +198,7 @@ const abort = what => {
         bufferedCalls.push([typedAr, parInfo, copyDoneFun]);
       };
 
-      ModuleCallback(Module => {
+      const onModuleReady = Module => {
         Module._broadwayInit();
         /**
         //  * Creates a typed array from a HEAP8 pointer.
@@ -288,8 +218,8 @@ const abort = what => {
         this.decode = (typedAr, parInfo) => {
           if (parInfo) {
             this.infoAr.push(parInfo);
-            parInfo.startDecoding = nowValue();
-          };
+            parInfo.startDecoding = this.now();
+          }
 
           this.streamBuffer.set(typedAr);
           Module._broadwayPlayStream(typedAr.length);
@@ -304,7 +234,11 @@ const abort = what => {
           bufferedCalls = [];
         };
         this.onDecoderReady(this);
-      });
+      };
+
+      getModule(noop, onPicFun).then(onModuleReady);
+
+
     };
 
     /**
@@ -346,7 +280,7 @@ const abort = what => {
         console.log('not sure what to do with this message event: ', e);
       }
     });
-    Decoder.nowValue = nowValue;
+
     return Decoder;
   })();
 }));
