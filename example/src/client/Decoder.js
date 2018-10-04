@@ -30,48 +30,48 @@ const noop = () => undefined;
    * you can integrate the file into your build system and provide the original file to be loaded into a worker.
    */
   var getModule = function (par_broadwayOnHeadersDecoded, par_broadwayOnPictureDecoded) {
-    var Module = {}
+    const Module = {
+      arguments: [],
+      thisProgram: "./this.program",
+      preRun: [],
+      postRun: [],
+      print: console.log.bind(console),
+      printErr: console.warn.bind(console),
+      quit: (status, toThrow) => { throw toThrow },
+      read: url => {
+        var xhr = new XMLHttpRequest;
+        xhr.open("GET", url, false);
+        xhr.send(null);
+        return xhr.responseText;
+      },
+      readAsync: (url, onload, onerror) => {
+        var xhr = new XMLHttpRequest;
+        xhr.open("GET", url, true);
+        xhr.responseType = "arraybuffer";
+        xhr.onload = () => {
+          if (xhr.status === 200 || xhr.status === 0 && xhr.response) {
+            onload(xhr.response);
+            return;
+          }
+          onerror();
+        };
+        xhr.onerror = onerror;
+        xhr.send(null);
+      },
+      readBinary: url => {
+        var xhr = new XMLHttpRequest;
+        xhr.open("GET", url, false);
+        xhr.responseType = "arraybuffer";
+        xhr.send(null);
+        return new Uint8Array(xhr.response);
+      },
+      setWindowTitle: title => document.title = title,
+    }
     console.log(Module);
-    Module.arguments = [];
-    Module.thisProgram = "./this.program";
-    Module.quit = (status, toThrow) => { throw toThrow };
-    Module.preRun = [];
-    Module.postRun = [];
-    Module.read = url => {
-      var xhr = new XMLHttpRequest;
-      xhr.open("GET", url, false);
-      xhr.send(null);
-      return xhr.responseText;
-    };
-    Module.readBinary = url => {
-      var xhr = new XMLHttpRequest;
-      xhr.open("GET", url, false);
-      xhr.responseType = "arraybuffer";
-      xhr.send(null);
-      return new Uint8Array(xhr.response);
-    };
-    Module.readAsync = (url, onload, onerror) => {
-      var xhr = new XMLHttpRequest;
-      xhr.open("GET", url, true);
-      xhr.responseType = "arraybuffer";
-      xhr.onload = () => {
-        if (xhr.status === 200 || xhr.status === 0 && xhr.response) {
-          onload(xhr.response);
-          return;
-        }
-        onerror();
-      };
-      xhr.onerror = onerror;
-      xhr.send(null);
-    };
-    Module.setWindowTitle = title => document.title = title;
-    Module.print = typeof console !== "undefined" ? console.log.bind(console) : typeof print !== "undefined" ? print : null;
-    Module.printErr = typeof printErr !== "undefined" ? printErr : typeof console !== "undefined" && console.warn.bind(console) || Module.print;
-    Module.print = Module.print;
-    Module.printErr = Module.printErr;
-    var STACK_ALIGN = 16;
 
+    var STACK_ALIGN = 16;
     const staticAlloc = size => {
+      console.log('staticAlloc');
       assert(!staticSealed);
       var ret = STATICTOP;
       STATICTOP = STATICTOP + size + 15 & -16;
@@ -82,7 +82,6 @@ const noop = () => undefined;
       "f64-rem": (x, y) => x % y,
       "debugger": () => { debugger },
     };
-    var functionPointers = new Array(0);
     var GLOBAL_BASE = 1024;
     var ABORT = 0;
 
@@ -93,6 +92,7 @@ const noop = () => undefined;
     };
 
     const Pointer_stringify = (ptr, length) => {
+      console.log('Pointer_stringify');
       if (length === 0 || !ptr) return "";
       var hasUtf = 0;
       var t;
@@ -339,12 +339,6 @@ const noop = () => undefined;
     }
     Module.preloadedImages = {};
     Module.preloadedAudios = {};
-    var dataURIPrefix = "data:application/octet-stream;base64,";
-
-    const isDataURI = filename =>
-      String.prototype.startsWith
-        ? filename.startsWith(dataURIPrefix)
-        : filename.indexOf(dataURIPrefix) === 0;
 
     function integrateWasmJS() {
       let wasmBinaryFile = "avc.wasm";
@@ -369,39 +363,7 @@ const noop = () => undefined;
         updateGlobalBufferViews();
       };
 
-
-      const getBinary = () => {
-        try {
-          if (Module.wasmBinary) {
-            return new Uint8Array(Module.wasmBinary);
-          }
-          if (Module.readBinary) {
-            return Module.readBinary(wasmBinaryFile);
-          }
-          else {
-            throw "on the web, we need the wasm binary to be preloaded and set on Module['wasmBinary']. emcc.py will do that for you when generating HTML (but not JS)";
-          }
-        }
-        catch (err) {
-          abort(err);
-        }
-      };
-
-      const getBinaryPromise = () => {
-        if (!Module.wasmBinary && typeof fetch === "function") {
-          return fetch(wasmBinaryFile, { credentials: "same-origin" })
-            .then(response => {
-              if (!response["ok"]) {
-                throw "failed to load wasm binary file at '" + wasmBinaryFile + "'"
-              }
-              return response["arrayBuffer"]()
-            })
-            .catch(() => getBinary());
-        }
-        return new Promise(ok => ok(getBinary()));
-      }
-
-      const doNativeWasm = (global, env, providedBuffer) => {
+      const doNativeWasm = (global, env) => {
         env["memory"] = Module.wasmMemory;
         info["global"] = {
           NaN: NaN,
@@ -433,31 +395,16 @@ const noop = () => undefined;
           receiveInstance(output["instance"], output["module"]);
         };
 
-        const instantiateArrayBuffer = receiver => {
-          return getBinaryPromise()
-            .then(binary => WebAssembly.instantiate(binary, info))
-            .then(receiver)
-            .catch(reason => {
-              Module.printErr("failed to asynchronously prepare wasm: " + reason);
-              abort(reason)
-            });
-        }
+        const wasmFile = fetch(wasmBinaryFile, { credentials: "same-origin" });
 
-        if (!Module.wasmBinary && typeof WebAssembly.instantiateStreaming === "function" && !isDataURI(wasmBinaryFile) && typeof fetch === "function") {
-          const wasmFile = fetch(wasmBinaryFile, { credentials: "same-origin" });
+        WebAssembly.instantiateStreaming(wasmFile, info)
+          .then(receiveInstantiatedSource)
+          .catch(reason => {
+            Module.printErr("wasm streaming compile failed: " + reason);
+            Module.printErr("falling back to ArrayBuffer instantiation");
+          });
 
-          WebAssembly.instantiateStreaming(wasmFile, info)
-            .then(receiveInstantiatedSource)
-            .catch(reason => {
-              Module.printErr("wasm streaming compile failed: " + reason);
-              Module.printErr("falling back to ArrayBuffer instantiation");
-              instantiateArrayBuffer(receiveInstantiatedSource);
-            });
-        }
-        else {
-          instantiateArrayBuffer(receiveInstantiatedSource)
-        }
-        return {}
+        return {};
       }
 
 
@@ -488,7 +435,7 @@ const noop = () => undefined;
 
       Module.reallocBuffer = size => finalMethod === "asmjs" ? asmjsReallocBuffer(size) : wasmReallocBuffer(size);
       var finalMethod = "";
-      Module.asm = (global, env, providedBuffer) => {
+      Module.asm = (global, env) => {
         var TABLE_SIZE = Module.wasmTableSize;
         if (TABLE_SIZE === undefined) TABLE_SIZE = 1024;
         var MAX_TABLE_SIZE = Module.wasmMaxTableSize;
@@ -501,7 +448,7 @@ const noop = () => undefined;
         }
         else {
           env["table"] = new WebAssembly.Table({
-            "initial": TABLE_SIZE,
+            initial: TABLE_SIZE,
             element: "anyfunc"
           })
         }
@@ -509,7 +456,7 @@ const noop = () => undefined;
         env["memoryBase"] = Module.STATIC_BASE
         env["tableBase"] = 0
         var exports;
-        exports = doNativeWasm(global, env, providedBuffer);
+        exports = doNativeWasm(global, env);
         assert(exports, "no binaryen method succeeded.");
         console.log('env: ', env);
         return exports
@@ -872,12 +819,10 @@ const noop = () => undefined;
           return HEAPU8.subarray(ptr, ptr + length);
         };
         toU32Array = function (ptr, length) {
-          //var tmp = HEAPU8.subarray(ptr, ptr + (length * 4));
           return new Uint32Array(HEAPU8.buffer, ptr, length);
         };
         this.streamBuffer = toU8Array(Module._broadwayCreateStream(MAX_STREAM_BUFFER_LENGTH), MAX_STREAM_BUFFER_LENGTH);
         this.pictureBuffers = {};
-        // collect extra infos that are provided with the nal units
         this.infoAr = [];
 
         /**
