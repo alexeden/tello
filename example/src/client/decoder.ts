@@ -1,53 +1,49 @@
 import { AvcModule, DecodedCallback } from './avc.module';
 
 export class Decoder {
-  static now() {
-    return performance.now();
-  }
+  static noop() { /* no-op */ }
+  static now() { return performance.now(); }
+  static MAX_STREAM_BUFFER_LENGTH = 1024 * 1024;
+
+  ready = false;
+  private readonly bufferedCalls: Array<[Uint8Array, number]> = [];
+
+  private readonly avc: AvcModule;
+  private streamBuffer: Uint8Array | undefined;
+  private wasmInstance: WebAssembly.Instance | undefined;
+  private readonly pictureBuffers: { [heapLoc: number]: Uint8Array } = {};
 
   constructor(
-    public decodedCallback: DecodedCallback,
-    parOptions: any
+    public decodedCallback: DecodedCallback
   ) {
-    console.log(this);
-    this.options = parOptions || {};
-    var toU8Array;
+    this.avc = new AvcModule(Decoder.noop, this.handleDecodedFrame.bind(this));
+  }
 
-    var MAX_STREAM_BUFFER_LENGTH = 1024 * 1024;
+  async start() {
+    const module = await this.avc.instantiateModule();
+    this.wasmInstance = module.instance;
 
-
-    this.onDecoderReady = noop;
-
-    var bufferedCalls = [];
-    this.decode = function decode(typedAr, parInfo, copyDoneFun) {
-      bufferedCalls.push([typedAr, parInfo, copyDoneFun]);
-    };
-
-    const onModuleReady = Module => {
-      Module._broadwayInit();
-      /**
-       * Creates a typed array from a HEAP8 pointer.
-       */
-      toU8Array = function (ptr, length) {
-        return Module.HEAPU8.subarray(ptr, ptr + length);
-      };
-      this.streamBuffer = toU8Array(Module._broadwayCreateStream(MAX_STREAM_BUFFER_LENGTH), MAX_STREAM_BUFFER_LENGTH);
-      this.pictureBuffers = {};
-      this.infoAr = [];
+    this.wasmInstance.exports._broadwayInit();
+    this.ready = true;
+    this.streamBuffer = this.toU8Array(
+      this.wasmInstance.exports._broadwayCreateStream(Decoder.MAX_STREAM_BUFFER_LENGTH),
+      Decoder.MAX_STREAM_BUFFER_LENGTH
+    );
+    this.infoAr = [];
 
 
+    // TODO: Reimplement the bufferedCalls mechanism
+    // if (bufferedCalls.length) {
+    //   var bi = 0;
+    //   for (bi = 0; bi < bufferedCalls.length; ++bi) {
+    //     this.decode(bufferedCalls[bi][0], bufferedCalls[bi][1], bufferedCalls[bi][2]);
+    //   }
+    //   bufferedCalls = [];
+    // }
+  }
 
-      if (bufferedCalls.length) {
-        var bi = 0;
-        for (bi = 0; bi < bufferedCalls.length; ++bi) {
-          this.decode(bufferedCalls[bi][0], bufferedCalls[bi][1], bufferedCalls[bi][2]);
-        };
-        bufferedCalls = [];
-      };
-      this.onDecoderReady(this);
-    };
-
-    getModule(noop, onPicFun).then(onModuleReady);
+  toU8Array(ptr: number, length: number): Uint8Array {
+    return this.avc.HEAPU8.subarray(ptr, ptr + length);
   }
 
   /**
@@ -55,21 +51,26 @@ export class Decoder {
    * start code, or a sequence of NAL units with framing start code prefixes. This
    * function overwrites stream buffer allocated by the codec with the supplied buffer.
    */
-  decode(typedAr, parInfo) {
+  decode(typedArray: Uint8Array, parInfo: any) {
+    if (!this.wasmInstance) {
+      this.bufferedCalls.push([typedArray, parInfo]);
+      return;
+    }
+
     if (parInfo) {
       this.infoAr.push(parInfo);
       parInfo.startDecoding = Decoder.now();
     }
 
-    this.streamBuffer.set(typedAr);
-    Module._broadwayPlayStream(typedAr.length);
+    this.streamBuffer!.set(typedArray);
+    this.wasmInstance.exports._broadwayPlayStream(typedArray.length);
   }
 
 
-  handleDecodedFrame($buffer: Uint8Array, width: number, height: number, infos: object[]) {
-    var buffer = this.pictureBuffers[$buffer];
+  handleDecodedFrame($buffer: number, width: number, height: number, infos: object[]) {
+    let buffer = this.pictureBuffers[$buffer];
     if (!buffer) {
-      buffer = this.pictureBuffers[$buffer] = toU8Array($buffer, (width * height * 3) / 2);
+      buffer = this.pictureBuffers[$buffer] = this.toU8Array($buffer, (width * height * 3) / 2);
     }
 
     var infos;
@@ -81,7 +82,7 @@ export class Decoder {
     this.infoAr = [];
 
     if (doInfo) {
-      infos[0].finishDecoding = this.now();
+      infos[0].finishDecoding = Decoder.now();
     };
 
     this.decodedCallback(buffer, width, height, infos);

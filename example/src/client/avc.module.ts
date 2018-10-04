@@ -1,10 +1,36 @@
+/**
+ * WASM Exports:
+ * (export "_broadwayCreateStream" (func $_broadwayCreateStream))
+ * (export "_broadwayExit" (func $_broadwayExit))
+ * (export "_broadwayGetMajorVersion" (func $_broadwayGetMajorVersion))
+ * (export "_broadwayGetMinorVersion" (func $_broadwayGetMinorVersion))
+ * (export "_broadwayInit" (func $_broadwayInit))
+ * (export "_broadwayPlayStream" (func $_broadwayPlayStream))
+ * (export "_free" (func $_free))
+ * (export "_malloc" (func $_malloc))
+ * (export "_memcpy" (func $_memcpy))
+ * (export "_memset" (func $_memset))
+ * (export "_sbrk" (func $_sbrk))
+ * (export "dynCall_ii" (func $dynCall_ii))
+ * (export "dynCall_iiii" (func $dynCall_iiii))
+ * (export "dynCall_viiiii" (func $dynCall_viiiii))
+ * (export "establishStackSpace" (func $establishStackSpace))
+ * (export "getTempRet0" (func $getTempRet0))
+ * (export "runPostSets" (func $_broadwayExit))
+ * (export "setTempRet0" (func $setTempRet0))
+ * (export "setThrew" (func $setThrew))
+ * (export "stackAlloc" (func $stackAlloc))
+ * (export "stackRestore" (func $stackRestore))
+ * (export "stackSave" (func $stackSave))
+ */
+
 interface AvcModuleOptions {
   totalMemory?: number;
 }
 
 type SysCall = (which: unknown, varargs: number) => number | never;
 
-export type DecodedCallback = (buffer: Uint8Array, width: number, height: number, infos: object[]) => void;
+export type DecodedCallback = (heapLoc: number, width: number, height: number, infos: object[]) => void;
 
 interface AvcImportObject {
   DYNAMICTOP_PTR: number;
@@ -41,16 +67,16 @@ export class AvcModule implements AvcImportObject {
   readonly memory: WebAssembly.Memory;
   readonly table: WebAssembly.Table;
   readonly tableBase = 0;
-  private readonly HEAPU8: Uint8Array;
-  private readonly HEAP16: Int16Array;
-  private readonly HEAP32: Int32Array;
+  readonly HEAPU8: Uint8Array;
+  readonly HEAP16: Int16Array;
+  readonly HEAP32: Int32Array;
 
   private syscallVarargs = 0;
 
   constructor(
     public _broadwayOnHeadersDecoded: DecodedCallback, // tslint:disable-line:variable-name
     public _broadwayOnPictureDecoded: DecodedCallback, // tslint:disable-line:variable-name
-    public opts: AvcModuleOptions
+    public opts: AvcModuleOptions = {}
   ) {
     const {
       totalMemory = 0x3200000,
