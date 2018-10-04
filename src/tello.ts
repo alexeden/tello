@@ -1,9 +1,16 @@
-import { Observable, BehaviorSubject, Subject } from 'rxjs';
+import * as path from 'path';
+import * as fs from 'fs';
+import { Observable, BehaviorSubject, Subject, from, of } from 'rxjs';
 import {
   map,
   filter,
   skipWhile,
   takeUntil,
+  take,
+  mergeMap,
+  repeat,
+  delay,
+  tap,
 } from 'rxjs/operators';
 import { UdpSubject } from './utils';
 import {
@@ -15,18 +22,39 @@ import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
 import { TelloStateManager, TelloState } from './state';
 import { TelloVideoUtils } from './video';
 
+export interface TelloOptions {
+  useMockVideo?: string | false;
+}
+
 export class Tello {
   private readonly commandSocket: UdpSubject;
   private readonly videoSocket: UdpSubject;
   private readonly intervals: NodeJS.Timer[] = [];
   private readonly stopSignal = new Subject<any>();
-  private readonly connected = new BehaviorSubject(false);
   private readonly stateManager = new TelloStateManager();
+  private readonly mockFrames: Buffer[] = [];
 
   readonly generator: TelloPacketGenerator;
   readonly stateStream: Observable<TelloState>;
 
-  constructor() {
+  constructor(
+    public opts: TelloOptions = {}
+  ) {
+    this.opts.useMockVideo = opts.useMockVideo || false;
+    // Load up the mocks
+    if (typeof this.opts.useMockVideo === 'string') {
+      try {
+        this.mockFrames = fs.readFileSync(this.opts.useMockVideo, 'utf8')
+          .split('EOL')
+          .filter(frame => frame.length > 0)
+          .map(frame => Buffer.from(frame, 'utf8'));
+      }
+      catch (error) {
+        console.error(`Failed to read mock video at "${this.opts.useMockVideo}". Got this error: `, error);
+        this.opts.useMockVideo = false;
+      }
+    }
+
     this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer).start();
     this.videoSocket = UdpSubject.create(TelloVideoClient).start();
     this.generator = new TelloPacketGenerator();
@@ -42,6 +70,19 @@ export class Tello {
     this.packetStream.subscribe(packet => {
       this.stateManager.parseAndUpdate(packet);
     });
+
+    // const mockPath = path.join(__dirname, `video-frames.mock`);
+    // const mockRecording = fs.createWriteStream(mockPath);
+    // this.videoSocket.pipe(
+    //   // skipWhile(buf => !TelloVideoUtils.isKeyframe(buf)),
+    //   // filter(buf => buf.length > 0),
+    //   take(500)
+    // ).subscribe({
+    //   next: chunk => {
+    //     mockRecording.write(chunk.toString() + 'EOL', 'utf8');
+    //   },
+    //   complete: () => mockRecording.close(),
+    // });
   }
 
   // Raw command stream
@@ -52,10 +93,22 @@ export class Tello {
   }
 
   // Raw video stream
-  get rawVideoStream() {
-    return this.videoSocket.asObservable().pipe(
-      takeUntil(this.stopSignal)
-    );
+  get rawVideoStream(): Observable<Buffer> {
+    if (this.opts.useMockVideo) {
+      const FPS = 25;
+      return from(this.mockFrames).pipe(
+        takeUntil(this.stopSignal),
+        mergeMap((value, i) =>
+          of(value).pipe(delay((1000 / FPS) * i))
+        ),
+        repeat()
+      );
+    }
+    else {
+      return this.videoSocket.asObservable().pipe(
+        takeUntil(this.stopSignal)
+      );
+    }
   }
 
   // Transformed command stream
@@ -114,7 +167,7 @@ export class Tello {
 
     this.sendOnInterval(20, () => this.generator.setStick());
     this.sendOnInterval(2000, () => this.generator.setDateTime());
-    this.sendOnInterval(1000, () => this.generator.queryVideoSpsPps());
+    this.sendOnInterval(500, () => this.generator.queryVideoSpsPps());
     await this.send(this.generator.queryVersion());       /* 69 */
     await this.send(this.generator.queryVideoBitrate());  /* 40 */
     await this.send(this.generator.queryHeightLimit());   /* 4182 */

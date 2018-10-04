@@ -8,9 +8,11 @@
 // ffmpeg -i udp://0.0.0.0:11111 -f sdl "window title"
 // import * as readline from 'readline';
 import * as url from 'url';
+import * as path from 'path';
 import { spawn, ChildProcess } from 'child_process';
 import { httpsServer } from './server';
 // import { map, take, tap, filter } from 'rxjs/operators';
+
 import * as ws from 'ws';
 import { Tello } from '../../dist';
 import { IncomingMessage } from 'http';
@@ -86,7 +88,9 @@ const spawnEncoder = () => {
   const broadcastVideo = createBroadcast(wssVideoServer);
   const broadcastState = createBroadcast(wssStateServer);
 
-  const drone = new Tello();
+  const drone = new Tello({
+    // useMockVideo: path.resolve(__dirname, 'video-frames.mock'),
+  });
   const h264encoder = spawnEncoder();
 
   drone.videoStream.subscribe(chunk => h264encoder.stdin.write(chunk));
