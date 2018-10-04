@@ -4,7 +4,7 @@ interface AvcModuleOptions {
 
 type SysCall = (which: unknown, varargs: number) => number | never;
 
-type DecodedCallback = (buffer: Uint8Array, width: number, height: number, infos: object[]) => void;
+export type DecodedCallback = (buffer: Uint8Array, width: number, height: number, infos: object[]) => void;
 
 interface AvcImportObject {
   DYNAMICTOP_PTR: number;

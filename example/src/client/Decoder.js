@@ -1,12 +1,12 @@
 const noop = () => undefined;
-const TOTAL_STACK = 0x500000;
-const TOTAL_MEMORY = 0x3200000;
-const STACK_BASE = 0x2ab0;
-const WASM_PAGE_SIZE = 65536;
-const STACKTOP = 0x2ac0; // GLOBAL_BASE + 9888 + 16;
-const STACK_MAX = STACK_BASE + TOTAL_STACK;
-const DYNAMIC_BASE = Math.ceil(STACK_MAX / 16) * 16;
-const DYNAMICTOP_PTR = 0x2ab0;
+const TOTAL_STACK     = 0x500000;
+const TOTAL_MEMORY    = 0x3200000;
+const STACK_BASE      = 0x2ab0;
+const WASM_PAGE_SIZE  = 0x10000;
+const DYNAMICTOP_PTR  = 0x2ab0;
+const STACKTOP        = 0x2ac0;
+const STACK_MAX       = STACK_BASE + TOTAL_STACK;
+const DYNAMIC_BASE    = Math.ceil(STACK_MAX / 16) * 16;
 const assert = (condition, text) => {
   if (!condition) {
     abort("Assertion failed: " + text)
@@ -22,6 +22,16 @@ const abort = what => {
   }
   throw `abort(${what}). Build with -s ASSERTIONS=1 for more info.`;
 }
+const startWasm = async importObject => {
+  try {
+    const wasmFile = fetch('avc.wasm', { credentials: 'same-origin' });
+    return WebAssembly.instantiateStreaming(wasmFile, importObject);
+  }
+  catch (e) {
+    console.error('Failed to instantiate the WebAssembly module', e);
+    abort(e);
+  }
+};
 
 // universal module definition
 (function (root, factory) {
@@ -39,16 +49,6 @@ const abort = what => {
     root.Decoder = factory();
   }
 }(this, function () {
-  const startWasm = async importObject => {
-    try {
-      const wasmFile = fetch('avc.wasm', { credentials: 'same-origin' });
-      return WebAssembly.instantiateStreaming(wasmFile, importObject);
-    }
-    catch (e) {
-      console.error('Failed to instantiate the WebAssembly module', e);
-      abort(e);
-    }
-  };
 
   /**
    * The reason why this is all packed into one file is that this file can also function as worker.
@@ -149,7 +149,7 @@ const abort = what => {
         STACKTOP,
       },
     });
-    console.log(wasmInstance);
+
     Object.assign(Module, wasmInstance.instance.exports);
     return Module;
   };
