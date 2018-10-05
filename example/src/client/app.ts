@@ -1,7 +1,7 @@
 import { Player } from './player';
 
 const h264Player = new Player({
-  workerFile : 'Decoder.js',
+  // workerFile : 'Decoder.js',
   size: { width: 1280, height: 720 },
   statsListener: stats => (window as any).stats = stats,
 });

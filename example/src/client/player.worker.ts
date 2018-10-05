@@ -33,7 +33,7 @@ type DecoderMessage
       infos: Array<{ startDecoding: number, finishDecoding: number }>
     };
 
-export class Player {
+export class PlayerWithWorker {
   private readonly worker: Worker;
   private readonly webGLCanvas: WebGLCanvas;
   readonly canvas: HTMLCanvasElement;

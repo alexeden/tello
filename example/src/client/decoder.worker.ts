@@ -1,4 +1,3 @@
-// import { Decoder } from './decoder';
 import { H264Decoder } from './h264';
 
 if (typeof window === 'undefined') {
@@ -7,7 +6,6 @@ if (typeof window === 'undefined') {
 
     const decoder = new H264Decoder({
       decodedImageListener: (buffer, width, height, infos) => {
-        // if (buffer) buffer = new Uint8Array(buffer);
         // buffer needs to be copied because we give up ownership
         const copyU8 = new Uint8Array(buffer.length);
         copyU8.set(buffer, 0);
