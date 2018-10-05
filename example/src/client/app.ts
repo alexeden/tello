@@ -1,11 +1,9 @@
 import { Player } from './player';
 
 const h264Player = new Player({
-  // workerFile : 'Decoder.js',
   size: { width: 1280, height: 720 },
   statsListener: stats => (window as any).stats = stats,
 });
-
 
 document.getElementById('videoFeed')!.appendChild(h264Player.canvas);
 

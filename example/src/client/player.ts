@@ -1,5 +1,5 @@
 import { WebGLCanvas } from './webgl-canvas';
-import DecoderWorker = require('worker-loader!./decoder.worker');
+import { H264Decoder } from './h264';
 
 interface Size {
   height: number;
@@ -8,7 +8,6 @@ interface Size {
 
 interface PlayerOptions {
   size?: Size;
-  // workerFile?: string;
   statsListener?: (stats: PlayerStats) => void;
 }
 
@@ -23,27 +22,15 @@ interface PlayerStats {
   rendering: { start: number, finish: number };
 }
 
-type DecoderMessage
-  = { consoleLog: string }
-  | {
-      buf: ArrayBuffer;
-      length: number;
-      height: number;
-      width: number;
-      infos: Array<{ startDecoding: number, finishDecoding: number }>
-    };
-
 export class Player {
-  private readonly worker: Worker;
   private readonly webGLCanvas: WebGLCanvas;
+  private readonly decoder: H264Decoder;
   readonly canvas: HTMLCanvasElement;
   statsListener: (stats: PlayerStats) => void;
-  nowValue: number;
   size: Size;
 
   constructor(options: PlayerOptions) {
     (window as any).player = this;
-    this.nowValue = performance.now();
     this.statsListener = options.statsListener || (() => { /* no-op */ });
 
     this.size = {
@@ -55,38 +42,15 @@ export class Player {
 
     this.webGLCanvas = new WebGLCanvas({ canvas: this.canvas, ...this.size });
 
-    this.worker = new DecoderWorker();
-
-    this.worker.addEventListener('message', this.handleWorkerMessage.bind(this));
-
-    this.worker.postMessage({
-      type: 'Broadway.js - Worker init',
+    this.decoder = new H264Decoder({
+      decodedImageListener: this.decodedImageListener.bind(this),
     });
+
+    this.decoder.start();
   }
 
-  handleWorkerMessage(e: MessageEvent) {
-    (window as any).workerMessageEvent = e;
-    const data: DecoderMessage = e.data;
-
-    if ('consoleLog' in data) {
-      console.log(data.consoleLog);
-      return;
-    }
-
-    if (!data.buf) {
-      console.log('empty buffer');
-      return;
-    }
-
-    const renderStats = this.renderFrame({
-      buffer: new Uint8Array(data.buf, 0, data.length),
-      height: data.height,
-      width: data.width,
-      infos: data.infos,
-    });
-
-    // const info = data.infos.reduce((accum, i: any) => ({ ...accum, ...i }), {});
-
+  decodedImageListener(buffer: Uint8Array, width: number, height: number, infos: any) {
+    const renderStats = this.renderFrame({ buffer, height, width, infos });
     this.statsListener({
       processing: {
         // start: data.infos.startProcessing,
@@ -104,16 +68,8 @@ export class Player {
     if (typeof data === 'string') {
       data = Player.toUint8Array(data);
     }
-    // Copy the sample so that we only do a structured clone of the region of interest
-    const copyU8 = new Uint8Array(data.length);
-    copyU8.set(data, 0);
-    const message = {
-      buf: copyU8.buffer,
-      length: data.length,
-      offset: 0,
-      info,
-    };
-    this.worker.postMessage(message, [copyU8.buffer]);
+
+    this.decoder.decode(new Uint8Array(data.buffer, 0, data.length), info);
   }
 
   static toUint8Array(str: string) {

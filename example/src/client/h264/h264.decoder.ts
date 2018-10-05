@@ -52,6 +52,7 @@ export class H264Decoder {
         this.wasmInstance.exports._broadwayCreateStream(H264Decoder.MAX_STREAM_BUFFER_LENGTH),
         H264Decoder.MAX_STREAM_BUFFER_LENGTH
       );
+      console.log(`H264Decoder is ready!`);
       return this.wasmInstance;
     }
     catch (e) {
