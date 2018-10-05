@@ -40,14 +40,17 @@ const spawnEncoder = () => {
     [
       '-fflags', 'nobuffer', '-f', 'h264',
       '-i', '-', '-r', '30',
-      '-c:v', 'libx264', '-b:v', '3M',
+      '-c:v', 'libx264',
+      '-b:v', '3M',
       '-preset', 'ultrafast',
       '-tune', 'zerolatency',
-      '-vsync', '0', '-async', '1',
+      '-vsync', '0',
+      '-async', '1',
       '-bsf:v', 'h264_mp4toannexb',
       '-x264-params', 'keyint=15:scenecut=0',
       '-movflags', 'frag_keyframe+empty_moov',
-      '-an', '-f', 'h264',
+      '-an',
+      '-f', 'h264',
       '-',
     ]
   );
@@ -88,9 +91,7 @@ const spawnEncoder = () => {
   const broadcastVideo = createBroadcast(wssVideoServer);
   const broadcastState = createBroadcast(wssStateServer);
 
-  const drone = new Tello({
-    // useMockVideo: path.resolve(__dirname, 'video-frames.mock'),
-  });
+  const drone = new Tello({});
   const h264encoder = spawnEncoder();
 
   drone.videoStream.subscribe(chunk => h264encoder.stdin.write(chunk));
