@@ -36,7 +36,16 @@ export const config: webpack.Configuration & { devServer: any } = {
   ],
   module: {
     rules: [
-      // all files with a `.ts` or `.tsx` extension will be handled by `ts-loader`
+      {
+        test: /worker\.js$/,
+        use: {
+          loader: 'worker-loader',
+          options: {
+            // inline: true,
+            name: 'worker.[hash].js',
+          },
+        },
+      },
       {
         test: /\.ts$/,
         loader: 'ts-loader',
