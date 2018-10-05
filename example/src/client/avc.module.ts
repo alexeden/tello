@@ -30,7 +30,8 @@ interface AvcModuleOptions {
 
 type SysCall = (which: unknown, varargs: number) => number | never;
 
-export type DecodedCallback = (heapLoc: number, width: number, height: number, infos: object[]) => void;
+export type DecodedHeapCallback = (heapLoc: number, width: number, height: number, infos?: object) => void;
+export type DecodedBufferCallback = (buffer: Uint8Array, width: number, height: number, infos?: object) => void;
 
 interface AvcImportObject {
   DYNAMICTOP_PTR: number;
@@ -43,7 +44,7 @@ interface AvcImportObject {
   getTotalMemory: () => number;
   abortOnCannotGrowMemory: () => never;
   _broadwayOnHeadersDecoded: (...args: any[]) => any;
-  _broadwayOnPictureDecoded: DecodedCallback;
+  _broadwayOnPictureDecoded: DecodedHeapCallback;
   _emscripten_memcpy_big: (dest: number, src: number, srcLength: number) => number;
   ___setErrNo: <T>(value: T) => T;
   ___syscall6: SysCall;
@@ -74,8 +75,8 @@ export class AvcModule implements AvcImportObject {
   private syscallVarargs = 0;
 
   constructor(
-    public _broadwayOnHeadersDecoded: DecodedCallback, // tslint:disable-line:variable-name
-    public _broadwayOnPictureDecoded: DecodedCallback, // tslint:disable-line:variable-name
+    public _broadwayOnHeadersDecoded: DecodedHeapCallback, // tslint:disable-line:variable-name
+    public _broadwayOnPictureDecoded: DecodedHeapCallback, // tslint:disable-line:variable-name
     public opts: AvcModuleOptions = {}
   ) {
     const {

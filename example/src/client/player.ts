@@ -1,9 +1,11 @@
 import { WebGLCanvas } from './webgl-canvas';
+import DecoderWorker = require('worker-loader!./decoder.worker');
 
 interface Size {
   height: number;
   width: number;
 }
+
 interface PlayerOptions {
   size?: Size;
   workerFile?: string;
@@ -43,7 +45,7 @@ export class Player {
   constructor(options: PlayerOptions) {
     this.nowValue = performance.now();
 
-    this.workerFile = options.workerFile || 'Decoder.js';
+    this.workerFile = options.workerFile || 'decoder.worker.js';
 
     this.statsListener = options.statsListener || (() => { /* no-op */ });
 
@@ -55,7 +57,9 @@ export class Player {
     this.canvas = Player.createCanvas(this.size);
 
     this.webGLCanvas = new WebGLCanvas({ canvas: this.canvas, ...this.size });
-    this.worker = new Worker(this.workerFile);
+
+    this.worker = new DecoderWorker();
+    // this.worker = new Worker(this.workerFile);
 
     this.worker.addEventListener('message', this.handleWorkerMessage.bind(this));
 
