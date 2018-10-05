@@ -1,70 +1,18 @@
-/**
- * WASM Exports:
- * (export "_broadwayCreateStream" (func $_broadwayCreateStream))
- * (export "_broadwayExit" (func $_broadwayExit))
- * (export "_broadwayGetMajorVersion" (func $_broadwayGetMajorVersion))
- * (export "_broadwayGetMinorVersion" (func $_broadwayGetMinorVersion))
- * (export "_broadwayInit" (func $_broadwayInit))
- * (export "_broadwayPlayStream" (func $_broadwayPlayStream))
- * (export "_free" (func $_free))
- * (export "_malloc" (func $_malloc))
- * (export "_memcpy" (func $_memcpy))
- * (export "_memset" (func $_memset))
- * (export "_sbrk" (func $_sbrk))
- * (export "dynCall_ii" (func $dynCall_ii))
- * (export "dynCall_iiii" (func $dynCall_iiii))
- * (export "dynCall_viiiii" (func $dynCall_viiiii))
- * (export "establishStackSpace" (func $establishStackSpace))
- * (export "getTempRet0" (func $getTempRet0))
- * (export "runPostSets" (func $_broadwayExit))
- * (export "setTempRet0" (func $setTempRet0))
- * (export "setThrew" (func $setThrew))
- * (export "stackAlloc" (func $stackAlloc))
- * (export "stackRestore" (func $stackRestore))
- * (export "stackSave" (func $stackSave))
- */
+import { H264ModuleImportObject, DecodedHeapCallback, H264ModuleOptions } from './h264.types';
+import wasmPath = require('./h264.decoder.wasm');
 
-interface AvcModuleOptions {
-  totalMemory?: number;
-}
-
-type SysCall = (which: unknown, varargs: number) => number | never;
-
-export type DecodedHeapCallback = (heapLoc: number, width: number, height: number, infos?: object) => void;
-export type DecodedBufferCallback = (buffer: Uint8Array, width: number, height: number, infos?: object) => void;
-
-interface AvcImportObject {
-  DYNAMICTOP_PTR: number;
-  STACKTOP: number;
-  memory: WebAssembly.Memory;
-  table: WebAssembly.Table;
-  tableBase: number;
-  abort: (reason: any) => never;
-  enlargeMemory: () => never;
-  getTotalMemory: () => number;
-  abortOnCannotGrowMemory: () => never;
-  _broadwayOnHeadersDecoded: (...args: any[]) => any;
-  _broadwayOnPictureDecoded: DecodedHeapCallback;
-  _emscripten_memcpy_big: (dest: number, src: number, srcLength: number) => number;
-  ___setErrNo: <T>(value: T) => T;
-  ___syscall6: SysCall;
-  ___syscall54: SysCall;
-  ___syscall146: SysCall;
-  ___syscall140: SysCall;
-}
-
-export class AvcModule implements AvcImportObject {
+export class H264Decoder implements H264ModuleImportObject {
   static readonly DYNAMICTOP_PTR  = 0x2ab0;
   static readonly STACK_BASE      = 0x2ab0;
   static readonly STACKTOP        = 0x2ac0;
   static readonly TOTAL_MEMORY    = 0x3200000;
   static readonly TOTAL_STACK     = 0x500000;
   static readonly WASM_PAGE_SIZE  = 0x10000;
-  static readonly STACK_MAX       = AvcModule.STACK_BASE + AvcModule.TOTAL_STACK;
-  static readonly DYNAMIC_BASE    = Math.ceil(AvcModule.STACK_MAX / 16) * 16;
+  static readonly STACK_MAX       = H264Decoder.STACK_BASE + H264Decoder.TOTAL_STACK;
+  static readonly DYNAMIC_BASE    = Math.ceil(H264Decoder.STACK_MAX / 16) * 16;
 
-  readonly DYNAMICTOP_PTR  = AvcModule.DYNAMICTOP_PTR;
-  readonly STACKTOP  = AvcModule.STACKTOP;
+  readonly DYNAMICTOP_PTR  = H264Decoder.DYNAMICTOP_PTR;
+  readonly STACKTOP  = H264Decoder.STACKTOP;
   readonly memory: WebAssembly.Memory;
   readonly table: WebAssembly.Table;
   readonly tableBase = 0;
@@ -77,15 +25,15 @@ export class AvcModule implements AvcImportObject {
   constructor(
     public _broadwayOnHeadersDecoded: DecodedHeapCallback, // tslint:disable-line:variable-name
     public _broadwayOnPictureDecoded: DecodedHeapCallback, // tslint:disable-line:variable-name
-    public opts: AvcModuleOptions = {}
+    public opts: H264ModuleOptions = {}
   ) {
     const {
       totalMemory = 0x3200000,
     } = opts;
 
     this.memory = new WebAssembly.Memory({
-      initial: totalMemory / AvcModule.WASM_PAGE_SIZE,
-      maximum: totalMemory / AvcModule.WASM_PAGE_SIZE,
+      initial: totalMemory / H264Decoder.WASM_PAGE_SIZE,
+      maximum: totalMemory / H264Decoder.WASM_PAGE_SIZE,
     });
 
     this.table = new WebAssembly.Table({
@@ -99,7 +47,7 @@ export class AvcModule implements AvcImportObject {
     this.HEAP32 = new Int32Array(this.memory.buffer);
     this.HEAP32[0] = 1668509029;
     this.HEAP16[1] = 25459;
-    this.HEAP32[AvcModule.DYNAMICTOP_PTR >> 2] = AvcModule.DYNAMIC_BASE;
+    this.HEAP32[H264Decoder.DYNAMICTOP_PTR >> 2] = H264Decoder.DYNAMIC_BASE;
     if (this.HEAPU8[2] !== 115 || this.HEAPU8[3] !== 99) {
       throw new Error('Runtime error: expected the system to be little-endian!');
     }
@@ -107,8 +55,7 @@ export class AvcModule implements AvcImportObject {
 
   async instantiateModule() {
     try {
-      const wasmFile = fetch('avc.wasm', { credentials: 'same-origin' });
-      return WebAssembly.instantiateStreaming(wasmFile, {
+      return WebAssembly.instantiateStreaming(fetch(wasmPath), {
         global: {},
         env: this,
       });
@@ -135,15 +82,15 @@ export class AvcModule implements AvcImportObject {
   }
 
   enlargeMemory(): never {
-     return this.abort(`Cannot enlarge memory arrays. Either (1) compile with  -s TOTAL_MEMORY=X  with X higher than the current value ${AvcModule.TOTAL_MEMORY}, (2) compile with  -s ALLOW_MEMORY_GROWTH=1  which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with  -s ABORTING_MALLOC=0 `);
+     return this.abort(`Cannot enlarge memory arrays. Either (1) compile with  -s TOTAL_MEMORY=X  with X higher than the current value ${H264Decoder.TOTAL_MEMORY}, (2) compile with  -s ALLOW_MEMORY_GROWTH=1  which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with  -s ABORTING_MALLOC=0 `);
   }
 
   getTotalMemory() {
-     return AvcModule.TOTAL_MEMORY;
+     return H264Decoder.TOTAL_MEMORY;
   }
 
   abortOnCannotGrowMemory() {
-    return this.abort(`Cannot enlarge memory arrays. Either (1) compile with  -s TOTAL_MEMORY=X  with X higher than the current value ${AvcModule.TOTAL_MEMORY}, (2) compile with  -s ALLOW_MEMORY_GROWTH=1  which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with  -s ABORTING_MALLOC=0 `);
+    return this.abort(`Cannot enlarge memory arrays. Either (1) compile with  -s TOTAL_MEMORY=X  with X higher than the current value ${H264Decoder.TOTAL_MEMORY}, (2) compile with  -s ALLOW_MEMORY_GROWTH=1  which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with  -s ABORTING_MALLOC=0 `);
   }
 
   ___setErrNo(value: any) {

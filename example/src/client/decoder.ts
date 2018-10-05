@@ -1,4 +1,4 @@
-import { AvcModule, DecodedBufferCallback } from './avc.module';
+import { H264Decoder, DecodedBufferCallback } from './h264';
 
 export class Decoder {
   static noop() { /* no-op */ }
@@ -7,7 +7,7 @@ export class Decoder {
 
   private readonly bufferedCalls: Array<[Uint8Array, number]> = [];
 
-  private readonly avc: AvcModule;
+  private readonly avc: H264Decoder;
   private streamBuffer: Uint8Array | undefined;
   private wasmInstance: WebAssembly.Instance | undefined;
   private info = {};
@@ -16,7 +16,7 @@ export class Decoder {
   constructor(
     public decodedCallback: DecodedBufferCallback
   ) {
-    this.avc = new AvcModule(Decoder.noop, this.handlePictureDecoded.bind(this));
+    this.avc = new H264Decoder(Decoder.noop, this.handlePictureDecoded.bind(this));
   }
 
   async start() {
@@ -53,14 +53,7 @@ export class Decoder {
       this.bufferedCalls.push([typedArray, parInfo]);
       return;
     }
-
-    if (parInfo) {
-      this.info = {
-        ...this.info,
-        startDecoding: Decoder.now(),
-      };
-    }
-
+    this.info = { ...this.info, startDecoding: Decoder.now() };
     this.streamBuffer!.set(typedArray);
     this.wasmInstance.exports._broadwayPlayStream(typedArray.length);
   }

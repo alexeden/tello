@@ -5,3 +5,9 @@ declare module "worker-loader!*" {
 
   export = WebpackWorker;
 }
+
+
+declare module "*.wasm" {
+  const url: string;
+  export = url;
+}

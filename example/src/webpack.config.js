@@ -1,9 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-// import * as webpack from 'webpack';
 
 module.exports = {
-// export const config: webpack.Configuration & { devServer: any } = {
   target: 'web',
   mode: 'development',
   context: path.resolve(__dirname, 'client'),
@@ -58,6 +56,19 @@ module.exports = {
       //     'css-loader',
       //   ],
       // },
+      {
+        test: /\.wasm$/,
+        type: 'javascript/auto', /** this disabled webpacks default handling of wasm */
+        use: [
+          {
+            loader: 'file-loader',
+            options: {
+              // name: 'wasm/[name].[hash].[ext]',
+              // publicPath: '../'
+            }
+          }
+        ]
+      }
     ],
   },
 };
