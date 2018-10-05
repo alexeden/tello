@@ -51,7 +51,7 @@ export class PlayerWithWorker {
       height: options.size && options.size.height || 200,
     };
 
-    this.canvas = Player.createCanvas(this.size);
+    this.canvas = PlayerWithWorker.createCanvas(this.size);
 
     this.webGLCanvas = new WebGLCanvas({ canvas: this.canvas, ...this.size });
 
@@ -102,7 +102,7 @@ export class PlayerWithWorker {
 
   decode(data: string | Uint8Array, info: any = {}) {
     if (typeof data === 'string') {
-      data = Player.toUint8Array(data);
+      data = PlayerWithWorker.toUint8Array(data);
     }
     // Copy the sample so that we only do a structured clone of the region of interest
     const copyU8 = new Uint8Array(data.length);
