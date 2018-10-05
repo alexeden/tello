@@ -6,8 +6,7 @@ export class Decoder {
   static MAX_STREAM_BUFFER_LENGTH = 1024 * 1024;
 
   private readonly bufferedCalls: Array<[Uint8Array, number]> = [];
-
-  private readonly avc: H264Decoder;
+  private readonly decoder: H264Decoder;
   private streamBuffer: Uint8Array | undefined;
   private wasmInstance: WebAssembly.Instance | undefined;
   private info = {};
@@ -16,11 +15,11 @@ export class Decoder {
   constructor(
     public decodedCallback: DecodedBufferCallback
   ) {
-    this.avc = new H264Decoder(Decoder.noop, this.handlePictureDecoded.bind(this));
+    this.decoder = new H264Decoder(Decoder.noop, this.handlePictureDecoded.bind(this));
   }
 
   async start() {
-    const module = await this.avc.instantiateModule();
+    const module = await this.decoder.instantiateStreaming();
     this.wasmInstance = module.instance;
 
     this.wasmInstance.exports._broadwayInit();
@@ -39,10 +38,6 @@ export class Decoder {
     // }
   }
 
-  private toU8Array(ptr: number, length: number): Uint8Array {
-    return this.avc.HEAPU8.subarray(ptr, ptr + length);
-  }
-
   /**
    * Decodes a stream buffer. This may be one single (unframed) NAL unit without the
    * start code, or a sequence of NAL units with framing start code prefixes. This
@@ -56,6 +51,10 @@ export class Decoder {
     this.info = { ...this.info, startDecoding: Decoder.now() };
     this.streamBuffer!.set(typedArray);
     this.wasmInstance.exports._broadwayPlayStream(typedArray.length);
+  }
+
+  private toU8Array(ptr: number, length: number): Uint8Array {
+    return this.decoder.HEAPU8.subarray(ptr, ptr + length);
   }
 
   private cacheBuffer(heapLoc: number, width: number, height: number): Uint8Array {

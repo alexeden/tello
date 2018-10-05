@@ -53,7 +53,7 @@ export class H264Decoder implements H264ModuleImportObject {
     }
   }
 
-  async instantiateModule() {
+  async instantiateStreaming() {
     try {
       return WebAssembly.instantiateStreaming(fetch(wasmPath), {
         global: {},
