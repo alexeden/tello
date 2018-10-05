@@ -1,4 +1,4 @@
-import { H264ModuleImportObject, DecodedHeapCallback, H264ModuleOptions } from './h264.types';
+import { H264ModuleImportObject, DecodedHeapCallback, H264ModuleOptions, DecodedBufferCallback } from './h264.types';
 import wasmPath = require('./h264.decoder.wasm');
 
 export class H264Decoder implements H264ModuleImportObject {
@@ -10,6 +10,8 @@ export class H264Decoder implements H264ModuleImportObject {
   static readonly WASM_PAGE_SIZE  = 0x10000;
   static readonly STACK_MAX       = H264Decoder.STACK_BASE + H264Decoder.TOTAL_STACK;
   static readonly DYNAMIC_BASE    = Math.ceil(H264Decoder.STACK_MAX / 16) * 16;
+  static readonly MAX_STREAM_BUFFER_LENGTH = 1024 * 1024;
+  static now() { return performance.now(); }
 
   readonly DYNAMICTOP_PTR  = H264Decoder.DYNAMICTOP_PTR;
   readonly STACKTOP  = H264Decoder.STACKTOP;
@@ -20,16 +22,25 @@ export class H264Decoder implements H264ModuleImportObject {
   readonly HEAP16: Int16Array;
   readonly HEAP32: Int32Array;
 
+  private readonly bufferedCalls: Array<[Uint8Array, number]> = [];
+  private readonly pictureBuffers: { [heapLoc: number]: Uint8Array } = {};
   private syscallVarargs = 0;
+  private streamBuffer: Uint8Array | undefined;
+  private wasmInstance: WebAssembly.Instance | undefined;
+  private info = {};
 
-  constructor(
-    public _broadwayOnHeadersDecoded: DecodedHeapCallback, // tslint:disable-line:variable-name
-    public _broadwayOnPictureDecoded: DecodedHeapCallback, // tslint:disable-line:variable-name
-    public opts: H264ModuleOptions = {}
-  ) {
+  readonly decodedImageListener: DecodedBufferCallback;
+  readonly decodedHeaderListener: DecodedBufferCallback;
+
+  constructor(public opts: H264ModuleOptions) {
     const {
       totalMemory = 0x3200000,
+      decodedHeaderListener = () => undefined,
+      decodedImageListener,
     } = opts;
+
+    this.decodedHeaderListener = decodedHeaderListener;
+    this.decodedImageListener = decodedImageListener;
 
     this.memory = new WebAssembly.Memory({
       initial: totalMemory / H264Decoder.WASM_PAGE_SIZE,
@@ -53,17 +64,67 @@ export class H264Decoder implements H264ModuleImportObject {
     }
   }
 
-  async instantiateStreaming() {
+  async start() {
     try {
-      return WebAssembly.instantiateStreaming(fetch(wasmPath), {
-        global: {},
-        env: this,
-      });
+      const wasm = await WebAssembly.instantiateStreaming(fetch(wasmPath), { global: {}, env: this });
+      this.wasmInstance = wasm.instance;
+      this.wasmInstance.exports._broadwayInit();
+      this.streamBuffer = this.toU8Array(
+        this.wasmInstance.exports._broadwayCreateStream(H264Decoder.MAX_STREAM_BUFFER_LENGTH),
+        H264Decoder.MAX_STREAM_BUFFER_LENGTH
+      );
+      return this.wasmInstance;
     }
     catch (e) {
       console.error('Failed to instantiate the WebAssembly module', e);
       return this.abort(e);
     }
+  }
+
+  /**
+   * Decodes a stream buffer. This may be one single (unframed) NAL unit without the
+   * start code, or a sequence of NAL units with framing start code prefixes. This
+   * function overwrites stream buffer allocated by the codec with the supplied buffer.
+   */
+  decode(typedArray: Uint8Array, parInfo: any = {}) {
+    if (!this.wasmInstance) {
+      this.bufferedCalls.push([typedArray, parInfo]);
+      return;
+    }
+    this.info = { ...this.info, startDecoding: H264Decoder.now() };
+    this.streamBuffer!.set(typedArray);
+    this.wasmInstance.exports._broadwayPlayStream(typedArray.length);
+  }
+
+  private cacheBuffer(heapLoc: number, width: number, height: number): Uint8Array {
+    if (this.pictureBuffers[heapLoc]) {
+      return this.pictureBuffers[heapLoc];
+    }
+    else {
+      const buffer = this.toU8Array(heapLoc, (width * height * 3) / 2);
+      this.pictureBuffers[heapLoc] = buffer;
+      return buffer;
+    }
+  }
+
+  private toU8Array(ptr: number, length: number): Uint8Array {
+    return this.HEAPU8.subarray(ptr, ptr + length);
+  }
+
+  _broadwayOnHeadersDecoded() {
+    /* noop */
+  }
+
+  /**
+   * This is the function that gets injected into the WASM module and called directly
+   * by the WASM code when a chunk of data has been decoded
+   */
+  // tslint:disable-next-line:variable-name
+  _broadwayOnPictureDecoded = (heapLoc: number, width: number, height: number, info: object) => {
+    const buffer = this.cacheBuffer(heapLoc, width, height);
+    const finalInfo = { ...this.info, ...info, finishDecoding: H264Decoder.now() };
+    this.info = {};
+    this.decodedImageListener(buffer, width, height, finalInfo);
   }
 
   private syscallGet() {
@@ -146,5 +207,4 @@ export class H264Decoder implements H264ModuleImportObject {
     this.HEAPU8.set(this.HEAPU8.subarray(src, src + num), dest);
     return dest;
   }
-
 }

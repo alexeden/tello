@@ -1,3 +1,5 @@
+// tslint:disable variable-name
+
 /**
  * WASM Exports:
  * (export "_broadwayCreateStream" (func $_broadwayCreateStream))
@@ -26,6 +28,8 @@
 
 
 export interface H264ModuleOptions {
+  decodedImageListener: DecodedBufferCallback;
+  decodedHeaderListener?: DecodedBufferCallback;
   totalMemory?: number;
 }
 
@@ -33,6 +37,26 @@ type SysCall = (which: unknown, varargs: number) => number | never;
 
 export type DecodedHeapCallback = (heapLoc: number, width: number, height: number, infos?: object) => void;
 export type DecodedBufferCallback = (buffer: Uint8Array, width: number, height: number, infos?: object) => void;
+
+export declare class H264AssemblyEnvironment {
+  DYNAMICTOP_PTR: number;
+  STACKTOP: number;
+  memory: WebAssembly.Memory;
+  table: WebAssembly.Table;
+  tableBase: number;
+  abort: (reason: any) => never;
+  enlargeMemory: () => never;
+  getTotalMemory: () => number;
+  abortOnCannotGrowMemory: () => never;
+  _broadwayOnHeadersDecoded: (...args: any[]) => any;
+  _broadwayOnPictureDecoded: DecodedHeapCallback;
+  _emscripten_memcpy_big: (dest: number, src: number, srcLength: number) => number;
+  ___setErrNo: <T>(value: T) => T;
+  ___syscall6: SysCall;
+  ___syscall54: SysCall;
+  ___syscall146: SysCall;
+  ___syscall140: SysCall;
+}
 
 export interface H264ModuleImportObject {
   DYNAMICTOP_PTR: number;

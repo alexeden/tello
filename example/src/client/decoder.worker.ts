@@ -1,21 +1,25 @@
-import { Decoder } from './decoder';
+// import { Decoder } from './decoder';
+import { H264Decoder } from './h264';
 
 if (typeof window === 'undefined') {
   (async () => {
     let decoderIsReady = false;
-    const decoder = new Decoder((buffer, width, height, infos) => {
-      // if (buffer) buffer = new Uint8Array(buffer);
-      // buffer needs to be copied because we give up ownership
-      const copyU8 = new Uint8Array(buffer.length);
-      copyU8.set(buffer, 0);
-      const message = {
-        buf: copyU8.buffer,
-        length: buffer.length,
-        width,
-        height,
-        infos,
-      };
-      postMessage(message, [copyU8.buffer]); // 2nd parameter is used to indicate transfer of ownership
+
+    const decoder = new H264Decoder({
+      decodedImageListener: (buffer, width, height, infos) => {
+        // if (buffer) buffer = new Uint8Array(buffer);
+        // buffer needs to be copied because we give up ownership
+        const copyU8 = new Uint8Array(buffer.length);
+        copyU8.set(buffer, 0);
+        const message = {
+          buf: copyU8.buffer,
+          length: buffer.length,
+          width,
+          height,
+          infos,
+        };
+        postMessage(message, [copyU8.buffer]); // 2nd parameter is used to indicate transfer of ownership
+      },
     });
 
 
