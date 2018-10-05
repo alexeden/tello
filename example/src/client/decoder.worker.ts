@@ -18,7 +18,6 @@ if (typeof window === 'undefined') {
       postMessage(message, [copyU8.buffer]); // 2nd parameter is used to indicate transfer of ownership
     });
 
-    await decoder.start();
 
     self.addEventListener('message', e => {
       if (e.data && e.data.type === 'Broadway.js - Worker init') {
@@ -35,6 +34,8 @@ if (typeof window === 'undefined') {
         console.log('not sure what to do with this message event: ', e);
       }
     });
+
+    await decoder.start();
 
   })();
 }

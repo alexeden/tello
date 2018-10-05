@@ -43,6 +43,7 @@ export class Player {
   size: Size;
 
   constructor(options: PlayerOptions) {
+    (window as any).player = this;
     this.nowValue = performance.now();
 
     this.workerFile = options.workerFile || 'decoder.worker.js';
@@ -94,19 +95,19 @@ export class Player {
       infos: data.infos,
     });
 
-    const info = data.infos.reduce((accum, i: any) => ({ ...accum, ...i }), {});
+    // const info = data.infos.reduce((accum, i: any) => ({ ...accum, ...i }), {});
 
     this.statsListener({
       processing: {
-        start: info.startProcessing,
+        // start: data.infos.startProcessing,
         finish: performance.now(),
       },
       rendering: renderStats,
       decoding: {
-        start: info.startDecoding || -1,
-        finish: info.finishDecoding || -1,
+        // start: info.startDecoding || -1,
+        // finish: info.finishDecoding || -1,
       },
-    });
+    } as any);
   }
 
   decode(data: string | Uint8Array, info: any = {}) {

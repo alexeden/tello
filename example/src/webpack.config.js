@@ -1,8 +1,9 @@
-import * as path from 'path';
-import * as webpack from 'webpack';
-import * as HtmlWebpackPlugin from 'html-webpack-plugin';
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+// import * as webpack from 'webpack';
 
-export const config: webpack.Configuration & { devServer: any } = {
+module.exports = {
+// export const config: webpack.Configuration & { devServer: any } = {
   target: 'web',
   mode: 'development',
   context: path.resolve(__dirname, 'client'),

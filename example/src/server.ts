@@ -2,7 +2,7 @@ import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as express from 'express';
-import { config } from './webpack.config';
+import * as config from './webpack.config';
 import * as webpack from 'webpack';
 import * as webpackDevMiddleware from 'webpack-dev-middleware';
 
@@ -14,7 +14,7 @@ const httpsServerOptions: https.ServerOptions = {
   cert: fs.readFileSync(path.resolve(__dirname, '..', 'server.crt')),
 };
 
-const compiler = webpack(config);
+const compiler = webpack(config as webpack.Configuration);
 
 app.use(webpackDevMiddleware(compiler, {
   publicPath: config.output!.publicPath!,
