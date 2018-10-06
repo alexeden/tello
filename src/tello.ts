@@ -10,6 +10,7 @@ import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
 import { TelloStateManager, TelloState } from './state';
 import { TelloVideoUtils } from './video';
 
+
 export class Tello {
   private readonly commandSocket: UdpSubject;
   private readonly videoSocket: UdpSubject;
@@ -33,15 +34,28 @@ export class Tello {
       }
     });
 
+    // const logCommand = pad(20, 'left', ' ');
+    // const logLength = pad(5, 'right', ' ');
+    // this.commandSocket.asObservable().pipe(
+    //   filter(TelloPacket.bufferIsPacket)
+    // )
+    // .subscribe(buffer => {
+    //   const parsed = TelloPacket.fromBuffer(buffer);
+    //   const label = TelloPacket.getCommandLabel(parsed.command);
+    //   // if (parsed.command !== Command.SetStick) {
+    //   console.log(`${logCommand(label)}${logLength(parsed.command)}${logLength(buffer.length)}${logLength(parsed.payload.length)}`);
+    //   // }
+    // });
+
     // Route incoming packets to the state manager
     this.packetStream.subscribe(packet => {
       this.stateManager.parseAndUpdate(packet);
     });
 
-    this.stateManager.state.pipe(
-      sampleTime(1000),
-      tag('state', true)
-    ).subscribe();
+    // this.stateManager.state.pipe(
+    //   sampleTime(1000),
+    //   tag('state', true)
+    // ).subscribe();
   }
 
   // Raw command stream
