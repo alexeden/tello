@@ -39,6 +39,8 @@ new Vue({
   el: '#app',
   template,
   data() {
+    const rect = document.body.getBoundingClientRect();
+
     return {
       state: null as null | any,
       videoFrame: 0,
@@ -46,7 +48,7 @@ new Vue({
       videoSocket: new WebSocketSubject<string>(`wss://${window.location.host}/video`),
       subscriptions: [] as Subscription[],
       player: new Player({
-        size: { width: 1280, height: 720 },
+        size: { width: rect.width, height: (rect.width * 9) / 16 },
         statsListener: stats => (window as any).stats = stats,
       }),
     };
@@ -66,9 +68,7 @@ new Vue({
     const stateSubscription = this.stateSocket.asObservable()
       .pipe(retryBackoff({ initialInterval: 1000 }))
       .subscribe(
-        msg => {
-          this.state = msg;
-        },
+        msg => this.state = msg,
         error => console.error('State stream error: ', error)
       );
 
