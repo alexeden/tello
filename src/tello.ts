@@ -1,18 +1,6 @@
-import * as path from 'path';
-import * as fs from 'fs';
-import { Observable, BehaviorSubject, Subject, from, of } from 'rxjs';
-import {
-  map,
-  filter,
-  skipWhile,
-  takeUntil,
-  take,
-  mergeMap,
-  repeat,
-  delay,
-  tap,
-} from 'rxjs/operators';
-import { UdpSubject } from './utils';
+import { Observable, Subject } from 'rxjs';
+import { map, filter, skipWhile, takeUntil, sampleTime } from 'rxjs/operators';
+import { UdpSubject, pad, tag } from './utils';
 import {
   TelloCommandClient,
   TelloCommandServer,
@@ -22,39 +10,17 @@ import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
 import { TelloStateManager, TelloState } from './state';
 import { TelloVideoUtils } from './video';
 
-export interface TelloOptions {
-  useMockVideo?: string | false;
-}
-
 export class Tello {
   private readonly commandSocket: UdpSubject;
   private readonly videoSocket: UdpSubject;
   private readonly intervals: NodeJS.Timer[] = [];
   private readonly stopSignal = new Subject<any>();
   private readonly stateManager = new TelloStateManager();
-  private readonly mockFrames: Buffer[] = [];
 
   readonly generator: TelloPacketGenerator;
   readonly stateStream: Observable<TelloState>;
 
-  constructor(
-    public opts: TelloOptions = {}
-  ) {
-    this.opts.useMockVideo = opts.useMockVideo || false;
-    // Load up the mocks
-    if (typeof this.opts.useMockVideo === 'string') {
-      try {
-        this.mockFrames = fs.readFileSync(this.opts.useMockVideo, 'utf8')
-          .split('EOL')
-          .filter(frame => frame.length > 0)
-          .map(frame => Buffer.from(frame, 'utf8'));
-      }
-      catch (error) {
-        console.error(`Failed to read mock video at "${this.opts.useMockVideo}". Got this error: `, error);
-        this.opts.useMockVideo = false;
-      }
-    }
-
+  constructor() {
     this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer).start();
     this.videoSocket = UdpSubject.create(TelloVideoClient).start();
     this.generator = new TelloPacketGenerator();
@@ -67,22 +33,15 @@ export class Tello {
       }
     });
 
+    // Route incoming packets to the state manager
     this.packetStream.subscribe(packet => {
       this.stateManager.parseAndUpdate(packet);
     });
 
-    // const mockPath = path.join(__dirname, `video-frames.mock`);
-    // const mockRecording = fs.createWriteStream(mockPath);
-    // this.videoSocket.pipe(
-    //   // skipWhile(buf => !TelloVideoUtils.isKeyframe(buf)),
-    //   // filter(buf => buf.length > 0),
-    //   take(500)
-    // ).subscribe({
-    //   next: chunk => {
-    //     mockRecording.write(chunk.toString() + 'EOL', 'utf8');
-    //   },
-    //   complete: () => mockRecording.close(),
-    // });
+    this.stateManager.state.pipe(
+      sampleTime(1000),
+      tag('state', true)
+    ).subscribe();
   }
 
   // Raw command stream
@@ -94,21 +53,9 @@ export class Tello {
 
   // Raw video stream
   get rawVideoStream(): Observable<Buffer> {
-    if (this.opts.useMockVideo) {
-      const FPS = 25;
-      return from(this.mockFrames).pipe(
-        takeUntil(this.stopSignal),
-        mergeMap((value, i) =>
-          of(value).pipe(delay((1000 / FPS) * i))
-        ),
-        repeat()
-      );
-    }
-    else {
-      return this.videoSocket.asObservable().pipe(
-        takeUntil(this.stopSignal)
-      );
-    }
+    return this.videoSocket.asObservable().pipe(
+      takeUntil(this.stopSignal)
+    );
   }
 
   // Transformed command stream
@@ -163,11 +110,12 @@ export class Tello {
     await this.send(connectionRequest);
     console.log('connection request sent');
     await connected;
+    await this.send(this.generator.setDateTime());
     console.log('connected!');
 
     this.sendOnInterval(20, () => this.generator.setStick());
     this.sendOnInterval(2000, () => this.generator.setDateTime());
-    this.sendOnInterval(500, () => this.generator.queryVideoSpsPps());
+    this.sendOnInterval(1000, () => this.generator.queryVideoSpsPps());
     await this.send(this.generator.queryVersion());       /* 69 */
     await this.send(this.generator.queryVideoBitrate());  /* 40 */
     await this.send(this.generator.queryHeightLimit());   /* 4182 */
