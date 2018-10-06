@@ -1,5 +1,5 @@
 import { Exposure, VideoBitrate, CameraMode, Stick } from '../lib';
-import { Wifi, SensorFlags, Speed, Battery, Flight, Sensors } from './tello-state.types';
+import { Wifi, Speed, Battery, Flight, Sensors } from './tello-state.types';
 import { Bitwise } from '../utils';
 
 
@@ -28,12 +28,10 @@ export class PayloadParsers {
 
   // Command 26
   static parseWifiStrength(payload: Buffer): Partial<Wifi> {
-    return !payload.length
-      ? {}
-      : {
-          signal: payload.readUInt8(0),
-          interference: payload.readUInt8(1),
-        };
+    return {
+      signal: payload.readUInt8(0),
+      interference: payload.readUInt8(1),
+    };
   }
 
   // Command 32
@@ -58,6 +56,9 @@ export class PayloadParsers {
 
   // Command 55
   static parseJpegQuality(payload: Buffer): number {
+    console.log('parseJpegQuality payload: ', payload);
+
+    // if (payload.length < 1) return 0;
     return payload.readInt8(0);
   }
 
@@ -80,29 +81,26 @@ export class PayloadParsers {
     };
 
     const sensorFlagByte = Bitwise.bitreader(payload.readUInt8(10));
-    const sensorFlags: SensorFlags = {
-      imu: sensorFlagByte(0),
-      pressure: sensorFlagByte(1),
-      downVisual: sensorFlagByte(2),
-      power: sensorFlagByte(3),
-      battery: sensorFlagByte(4),
-      gravity: sensorFlagByte(5),
-      wind: sensorFlagByte(7),
+    const sensors: Partial<Sensors> = {
+      height: payload.readInt16LE(0),
+      imuCalibration: payload.readInt8(11),
+      imuState: sensorFlagByte(0),
+      pressureState: sensorFlagByte(1),
+      downVisualState: sensorFlagByte(2),
+      powerState: sensorFlagByte(3),
+      batteryState: sensorFlagByte(4),
+      gravityState: sensorFlagByte(5),
+      windState: sensorFlagByte(7),
     };
+
 
     const flight: Partial<Flight> = {
       time: payload.readInt16LE(8),
     };
 
-    const sensors: Partial<Sensors> = {
-      height: payload.readInt16LE(0),
-      imuCalibration: payload.readInt8(11),
-    };
-
     return {
       flight,
       speed,
-      sensorFlags,
       sensors,
       battery,
     };
