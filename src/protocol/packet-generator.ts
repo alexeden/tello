@@ -18,10 +18,11 @@ export class TelloPacketGenerator {
     return connectionRequest;
   }
 
-  logHeader(): Packet {
+  logHeader(ack: Buffer): Packet {
     return TelloPacket.of({
-      command: Command.LogHeader,
+      command: 4176,
       sequence: this.sequence++,
+      payload: ack,
     });
   }
 
