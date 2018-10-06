@@ -59,47 +59,34 @@ const spawnEncoder = () => {
 };
 
 (async () => {
-  const wssVideoServer = new ws.Server({ noServer: true });
-  const wssStateServer = new ws.Server({ noServer: true });
-  const h264NalUnit = Buffer.from([0, 0, 0, 1]);
+  const videoWsServer = new ws.Server({ noServer: true });
+  const stateWsServer = new ws.Server({ noServer: true });
+  videoWsServer.on('connection', () => console.log('got a connection on the video server'));
+  stateWsServer.on('connection', () => console.log('got a connection on the state server'));
+
   httpsServer.on('upgrade', (request: IncomingMessage, socket: Socket, head: Buffer) => {
     const pathname = url.parse(request.url!).pathname;
+    let wssServer: ws.Server;
 
-    if (pathname === '/video') {
-      wssVideoServer.handleUpgrade(request, socket, head, clientSocket => {
-        wssVideoServer.emit('connection', clientSocket, request);
-      });
+    switch (pathname) {
+      case '/video': wssServer = videoWsServer; break;
+      case '/state': wssServer = stateWsServer; break;
+      default: socket.destroy(); return;
     }
-    else if (pathname === '/state') {
-      wssStateServer.handleUpgrade(request, socket, head, clientSocket => {
-        wssStateServer.emit('connection', clientSocket, request);
-      });
-    }
-    else {
-      socket.destroy();
-    }
+
+    wssServer.handleUpgrade(request, socket, head, clientSocket => {
+      wssServer.emit('connection', clientSocket, request);
+    });
   });
 
-  wssVideoServer.on('connection', socket => {
-    console.log('got a connection on the video server');
-  });
+  const broadcastVideo = createBroadcast(videoWsServer);
+  const broadcastState = createBroadcast(stateWsServer);
 
+  const drone = new Tello();
 
-  wssStateServer.on('connection', socket => {
-    console.log('got a connection on the state server');
-  });
-
-
-  const broadcastVideo = createBroadcast(wssVideoServer);
-  const broadcastState = createBroadcast(wssStateServer);
-
-  const drone = new Tello({});
   const h264encoder = spawnEncoder();
-
-  drone.videoStream.subscribe(chunk => h264encoder.stdin.write(chunk));
-
+  const h264NalUnit = Buffer.from([0, 0, 0, 1]);
   let h264chunks: Buffer[] = [];
-
   h264encoder.stdout.on('data', (data: Buffer) => {
     const idx = data.indexOf(h264NalUnit);
     if (idx > -1 && h264chunks.length > 0) {
@@ -114,10 +101,8 @@ const spawnEncoder = () => {
   });
 
 
-  drone.stateStream.subscribe(
-    state => broadcastState(JSON.stringify(state))
-  );
-
+  drone.videoStream.subscribe(chunk => h264encoder.stdin.write(chunk));
+  drone.stateStream.subscribe(state => broadcastState(JSON.stringify(state)));
 
   drone.start();
 })();

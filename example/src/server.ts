@@ -2,9 +2,10 @@ import * as https from 'https';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as express from 'express';
-import * as config from './webpack.config';
 import * as webpack from 'webpack';
 import * as webpackDevMiddleware from 'webpack-dev-middleware';
+// tslint:disable-next-line:no-var-requires
+const config = require('./webpack.config');
 
 const app = express();
 const httpsPort = config.devServer.port as number;

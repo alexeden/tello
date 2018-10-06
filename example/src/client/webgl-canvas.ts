@@ -227,21 +227,21 @@ export class WebGLCanvas {
       0, 0, 0, 1,
     ];
 
-    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
     gl.shaderSource(vertexShader, vertexShaderScript);
     gl.compileShader(vertexShader);
     if (!gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS)) {
       console.log('Vertex shader failed to compile: ' + gl.getShaderInfoLog(vertexShader));
     }
 
-    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)!;
     gl.shaderSource(fragmentShader, fragmentShaderScript);
     gl.compileShader(fragmentShader);
     if (!gl.getShaderParameter(fragmentShader, gl.COMPILE_STATUS)) {
       console.log('Fragment shader failed to compile: ' + gl.getShaderInfoLog(fragmentShader));
     }
 
-    const program = gl.createProgram();
+    const program = gl.createProgram()!;
     gl.attachShader(program, vertexShader);
     gl.attachShader(program, fragmentShader);
     gl.linkProgram(program);
@@ -252,9 +252,9 @@ export class WebGLCanvas {
     gl.useProgram(program);
 
     const YUV2RGBRef = gl.getUniformLocation(program, 'YUV2RGB');
-    gl.uniformMatrix4fv(YUV2RGBRef, false, YUV2RGB);
+    gl.uniformMatrix4fv(YUV2RGBRef, false, YUV2RGB!);
 
-    return program!;
+    return program;
   }
 
 }

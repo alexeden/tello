@@ -45,9 +45,7 @@ export class Tello {
     .subscribe(buffer => {
       const parsed = TelloPacket.fromBuffer(buffer);
       const label = TelloPacket.getCommandLabel(parsed.command);
-      // if (parsed.command !== Command.SetStick) {
       console.log(`${logCommand(label)}${logLength(parsed.command)}${logLength(buffer.length)}${logLength(parsed.payload.length)}`);
-      // }
     });
 
     // Route incoming packets to the state manager

@@ -113,7 +113,7 @@ export class PlayerWithWorker {
       offset: 0,
       info,
     };
-    this.worker.postMessage(message, [copyU8.buffer]);
+    this.worker.postMessage(message, [copyU8.buffer as any]);
   }
 
   static toUint8Array(str: string) {

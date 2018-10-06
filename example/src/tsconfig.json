@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "allowJs": true,
+    "allowJs": false,
     "allowSyntheticDefaultImports": false,
     "alwaysStrict": true,
     "declaration": true,
@@ -32,5 +32,8 @@
       "webassembly-web-api"
     ],
     "target": "esnext"
-  }
+  },
+  "exclude": [
+    "./webpack.config.js"
+  ]
 }

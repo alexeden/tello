@@ -16,7 +16,7 @@ if (typeof window === 'undefined') {
           height,
           infos,
         };
-        postMessage(message, [copyU8.buffer]); // 2nd parameter is used to indicate transfer of ownership
+        postMessage(message, [copyU8.buffer as any]); // 2nd parameter is used to indicate transfer of ownership
       },
     });
 
