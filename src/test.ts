@@ -10,8 +10,6 @@ import {
   repeat,
 } from 'ramda';
 import { Tello } from './tello';
-import { tag } from './utils';
-import { TelloPacket } from './protocol';
 import { spawn } from 'child_process';
 
 const leftpad = (value: any, char: string | number = 0, w = 2) => repeat(char, 10).join('').concat(value).slice(-w);
@@ -26,50 +24,38 @@ const createTimestamp = () => {
 
 (async () => {
   const drone = new Tello();
-  const mediaPath = path.resolve(__dirname, '..', 'media');
-  const videoExtension = 'mp4';
-  const videoPath = path.join(mediaPath, `video.${createTimestamp()}.${videoExtension}`);
-  const videoRecording = fs.createWriteStream(videoPath);
+  // const h264encoder = spawn(
+  //   'ffmpeg',
+  //   [
+  //     '-fflags', 'nobuffer',
+  //     '-f', 'h264',
+  //     '-i', '-',
+  //     '-r', '30',
+  //     '-c:v', 'libx264',
+  //     '-b:v', '3M',
+  //     '-preset', 'ultrafast',
+  //     '-tune', 'zerolatency',
+  //     '-vsync', '0',
+  //     '-async', '1',
+  //     '-bsf:v', 'h264_mp4toannexb',
+  //     '-x264-params', 'keyint=15:scenecut=0',
+  //     '-movflags', 'frag_keyframe+empty_moov',
+  //     '-an',
+  //     '-f', 'h264',
+  //     '-',
+  //   ]
+  // );
 
-  const h264encoder = spawn(
-    'ffmpeg',
-    [
-      '-fflags', 'nobuffer',
-      '-f', 'h264',
-      '-r', '30',
-      '-i', '-',
-      '-c:v', 'libx264',
-      '-codec:v', 'copy',
-      '-preset', 'ultrafast',
-      '-tune', 'zerolatency',
-      '-vsync', '0',
-      '-async', '1',
-      '-bsf:v', 'h264_mp4toannexb',
-      '-x264-params', 'keyint=15:scenecut=0',
-      '-movflags', 'frag_keyframe+empty_moov',
-      '-an',
-      '-f', 'mp4',
-      '-',
-    ]
-  );
+  // drone.videoStream.subscribe(videoChunk =>  h264encoder.stdin.write(videoChunk));
 
-  drone.videoStream.subscribe(videoChunk => {
-    // console.log('writing to h264encoder');
-    // videoRecording.write(videoChunk);
-    h264encoder.stdin.write(videoChunk);
-  });
 
-  h264encoder.stdout.on('data', chunk => {
-    videoRecording.write(chunk);
-  });
+  // h264encoder.stdout.on('error', error => {
+  //   console.log('h264encoder stdout error: ', error);
+  // });
 
-  h264encoder.stdout.on('error', error => {
-    console.log('h264encoder stdout error: ', error);
-  });
-
-  h264encoder.stderr.on('data', data => {
-    console.log('h264encoder stderr data: ', data.toString());
-  });
+  // h264encoder.stderr.on('data', data => {
+  //   console.log('h264encoder stderr data: ', data.toString());
+  // });
 
   drone.start();
 })();

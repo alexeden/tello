@@ -38,8 +38,10 @@ const spawnEncoder = () => {
   return spawn(
     'ffmpeg',
     [
-      '-fflags', 'nobuffer', '-f', 'h264',
-      '-i', '-', '-r', '30',
+      '-fflags', 'nobuffer',
+      '-f', 'h264',
+      '-i', '-',
+      '-r', '30',
       '-c:v', 'libx264',
       '-b:v', '3M',
       '-preset', 'ultrafast',
