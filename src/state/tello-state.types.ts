@@ -2,15 +2,19 @@ import { CameraMode, VideoBitrate, Exposure } from '../lib';
 
 export interface Battery {
   percentage: number;
-  lowThreshold: number;
+  batteryLeft: number;
   flyTimeLeft: number;
 }
 
 export interface Camera {
+  state: number;
   bitrate: VideoBitrate;
   exposure: Exposure;
   jpegQuality: number;
   mode: CameraMode;
+  frontIn: boolean;
+  frontOut: boolean;
+  frontLSC: boolean;
 }
 
 export interface Wifi {
@@ -22,10 +26,13 @@ export interface Wifi {
 export interface Flight {
   heightLimit: number;
   time: number;
+  mode: number;
+  throwFlyTimer: number;
 }
 
 export interface Sensors {
   height: number;
+  temperatureHeight: number;
   imuCalibration: number;
   light: number;
   batteryState: boolean;
@@ -43,6 +50,19 @@ export interface Speed {
   vertical: number;
 }
 
+export interface Status {
+  version: string | null;
+  flying: boolean;
+  onGround: boolean;
+  emOpen: boolean;
+  hovering: boolean;
+  outageRecording: boolean;
+  batteryLow: boolean;
+  batteryVeryLow: boolean;
+  factoryMode: boolean;
+  electricalMachineryState: number;
+}
+
 
 export interface TelloState {
   wifi: Wifi | {};
@@ -51,7 +71,7 @@ export interface TelloState {
   sensors: Sensors | {};
   battery: Battery | {};
   speed: Speed | {};
-  version: string | null;
+  status: Status | {};
 }
 
 // export interface Status {

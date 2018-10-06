@@ -18,8 +18,8 @@ export class TelloStateManager {
       flight: {},
       sensors: {},
       speed: {},
+      status: {},
       wifi: {},
-      version: null,
     };
 
     this.state = this.updates.asObservable().pipe(
@@ -91,22 +91,30 @@ export class TelloStateManager {
 
       case Command.QueryVersion:
         const version = PayloadParsers.parseVersion(payload);
-        this.updates.next(state => ({ ...state, version }));
+        this.updates.next(state => ({
+          ...state,
+          status: { ...state.status, version },
+        }));
         return true;
 
       case Command.FlightStatus:
         const {
-          battery,
           flight,
-          sensors,
           speed,
+          sensors,
+          camera,
+          battery,
+          status,
         } = PayloadParsers.parseFlightStatus(payload);
+
         this.updates.next(state => ({
           ...state,
           battery: { ...state.battery, ...battery },
           flight: { ...state.flight, ...flight },
           sensors: { ...state.sensors, ...sensors },
           speed: { ...state.speed, ...speed },
+          camera: { ...state.camera, ...camera },
+          status: { ...state.status, ...status },
         }));
         return true;
 
