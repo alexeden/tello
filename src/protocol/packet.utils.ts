@@ -30,7 +30,7 @@ export class TelloPacket {
     const n = (buf[1] + (buf[2] << 8)) >> 3;
 
     return {
-      payload: buf.slice(9, n - TelloPacket.MIN_PACKET_SIZE),
+      payload: buf.slice(9, buf.length - 2),
       sender: buf[4] & 0xC0,
       type: (buf[4] >> 3) & 0x07,
       command: buf[5] | (buf[6] << 8),
@@ -52,6 +52,10 @@ export class TelloPacket {
     const c16 = calcCRC16(buf.slice(0, 9 + payload.length));
     buf.writeUInt16LE(c16, Offset.Crc16 + payload.length - 1);
     return buf;
+  }
+
+  static getCommandLabel(cmd: Command): string {
+    return Command[cmd];
   }
 
   static getCommandType(cmd: Command): Type {
