@@ -45,10 +45,11 @@ new Vue({
       state: null as null | any,
       videoFrame: 0,
       stateSocket: new WebSocketSubject(`wss://${window.location.host}/state`),
-      videoSocket: new WebSocketSubject<string>(`wss://${window.location.host}/video`),
+      videoSocket: new WebSocket(`wss://${window.location.host}/video`),
       subscriptions: [] as Subscription[],
       player: new Player({
-        size: { width: rect.width, height: (rect.width * 9) / 16 },
+        size: { width: 1280, height: 720 },
+        // size: { width: rect.width, height: (rect.width * 9) / 16 },
         statsListener: stats => (window as any).stats = stats,
       }),
     };
@@ -58,12 +59,15 @@ new Vue({
     const videoWrapper = this.$refs.videoWrapper as HTMLDivElement;
     videoWrapper.appendChild(this.player.canvas);
 
-    const videoSubscription = this.videoSocket.asObservable()
-      .pipe(retryBackoff({ initialInterval: 1000 }))
-      .subscribe(
-        data => this.player.decode(data, { startProcessing: performance.now() }),
-        err => console.error('Video stream error: ', err)
-      );
+    this.videoSocket.onerror = () => this.videoSocket.close();
+    this.videoSocket.onmessage = e => this.player.decode(e.data, { startProcessing: performance.now() });
+
+    // const videoSubscription = this.videoSocket.asObservable()
+    //   .pipe(retryBackoff({ initialInterval: 1000 }))
+    //   .subscribe(
+    //     data => this.player.decode(data, { startProcessing: performance.now() }),
+    //     err => console.error('Video stream error: ', err)
+    //   );
 
     const stateSubscription = this.stateSocket.asObservable()
       .pipe(retryBackoff({ initialInterval: 1000 }))
@@ -74,6 +78,6 @@ new Vue({
 
 
     this.subscriptions.push(stateSubscription);
-    this.subscriptions.push(videoSubscription);
+    // this.subscriptions.push(videoSubscription);
   },
 });
