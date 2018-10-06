@@ -1,6 +1,6 @@
 import { TelloState } from './tello-state.types';
 import { Subject, ConnectableObservable, of } from 'rxjs';
-import { Packet, Command } from '../protocol';
+import { Packet, Command, TelloPacket } from '../protocol';
 import { publishReplay, scan } from 'rxjs/operators';
 import { PayloadParsers } from './parsers';
 
@@ -16,7 +16,6 @@ export class TelloStateManager {
       battery: {},
       camera: {},
       flight: {},
-      sensorFlags: {},
       sensors: {},
       speed: {},
       wifi: {},
@@ -32,11 +31,6 @@ export class TelloStateManager {
   }
 
   parseAndUpdate({ command, payload }: Packet) {
-    if (payload.length < 1) {
-      console.log(`Command ID "${command}" received an empty payload.`);
-      return false;
-    }
-
     switch (command) {
       case Command.QueryWifiRegion:
         const region = PayloadParsers.parseWifiRegion(payload);
@@ -54,6 +48,7 @@ export class TelloStateManager {
         }));
         return true;
 
+      case Command.QueryVideoBitrate:
       case Command.SetVideoBitrate:
         const bitrate = PayloadParsers.parseVideoBitrate(payload);
         this.updates.next(state => ({
@@ -103,7 +98,6 @@ export class TelloStateManager {
         const {
           battery,
           flight,
-          sensorFlags,
           sensors,
           speed,
         } = PayloadParsers.parseFlightStatus(payload);
@@ -112,7 +106,6 @@ export class TelloStateManager {
           battery: { ...state.battery, ...battery },
           flight: { ...state.flight, ...flight },
           sensors: { ...state.sensors, ...sensors },
-          sensorFlags: { ...state.sensorFlags, ...sensorFlags },
           speed: { ...state.speed, ...speed },
         }));
         return true;
@@ -134,7 +127,13 @@ export class TelloStateManager {
         return true;
 
       default:
-        console.log(`No parser defined for command ID "${command}", payload is ${payload.length} bytes long`);
+        const label = TelloPacket.getCommandLabel(command);
+        if (!label) {
+          console.warn(`Got a completely unknown command: ${command}`);
+        }
+        else {
+          console.log(`No parser defined for ${label} (${command}) command, payload is ${payload.length} bytes long`);
+        }
         return false;
     }
   }

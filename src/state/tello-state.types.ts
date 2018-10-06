@@ -28,6 +28,13 @@ export interface Sensors {
   height: number;
   imuCalibration: number;
   light: number;
+  batteryState: boolean;
+  downVisualState: boolean;
+  gravityState: boolean;
+  imuState: boolean;
+  powerState: boolean;
+  pressureState: boolean;
+  windState: boolean;
 }
 
 export interface Speed {
@@ -36,29 +43,19 @@ export interface Speed {
   vertical: number;
 }
 
-export interface SensorFlags {
-  battery: boolean;
-  downVisual: boolean;
-  gravity: boolean;
-  imu: boolean;
-  power: boolean;
-  pressure: boolean;
-  wind: boolean;
-}
 
 export interface TelloState {
-  wifi: Partial<Wifi>;
+  wifi: Wifi | {};
   camera: Camera | {};
   flight: Flight | {};
   sensors: Sensors | {};
-  sensorFlags: SensorFlags | {};
   battery: Battery | {};
   speed: Speed | {};
   version: string | null;
 }
 
 // export interface Status {
-  // sensorFlags: SensorFlags;
+  // sensorFlags: SensorStates;
   // battery: Battery;
   // speed: Speed;
   // imuCalibration: number;
