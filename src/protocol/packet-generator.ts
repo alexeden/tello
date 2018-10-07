@@ -18,9 +18,23 @@ export class TelloPacketGenerator {
     return connectionRequest;
   }
 
+  doTakeoff(): Packet {
+    return TelloPacket.of({
+      command: Command.DoTakeoff,
+      sequence: this.sequence++,
+    });
+  }
+
+  doLand(): Packet {
+    return TelloPacket.of({
+      command: Command.DoLand,
+      sequence: this.sequence++,
+    });
+  }
+
   logHeader(ack: Buffer): Packet {
     return TelloPacket.of({
-      command: 4176,
+      command: Command.LogHeader,
       sequence: this.sequence++,
       payload: ack,
     });

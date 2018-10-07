@@ -26,6 +26,12 @@ const isCommand = (value: any): value is Command => typeof Command[value] === 's
       case Command.DoConnect:
         drone.start();
         break;
+      case Command.DoTakeoff:
+        drone.takeoff();
+        break;
+      case Command.DoLand:
+        drone.land();
+        break;
     }
   };
 

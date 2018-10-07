@@ -158,4 +158,12 @@ export class Tello {
     }
     this.generator.reset();
   }
+
+  takeoff() {
+    return this.send(this.generator.doTakeoff());
+  }
+
+  land() {
+    return this.send(this.generator.doLand());
+  }
 }
