@@ -1,3 +1,15 @@
 canvas {
   width: 100vw;
 }
+
+pre {
+  width: 100%;
+  overflow: scroll;
+  max-height: 500px;
+  padding: 1rem;
+  border-radius: .25rem;
+  box-sizing: border-box;
+  font-size: 12px;
+  line-height: 1.5;
+  background-color: #e1e1e1;
+}

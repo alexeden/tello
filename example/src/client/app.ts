@@ -1,22 +1,22 @@
 // tslint:disable no-invalid-this
 import Vue from 'vue';
-// import { WebSocketSubject } from 'rxjs/webSocket';
 import { Subscription, pipe } from 'rxjs';
-// import { tap } from 'rxjs/operators';
-// import { retryBackoff } from 'backoff-rxjs';
 import { Player } from './player';
 
 const template = `
-<div class="column gap-10">
-  <h1>Hello, Tello</h1>
-  <div class="column gap-10">
+<div class="column gap-20">
+  <div class="column gap-10 p-10">
+    <h1>Hello, Tello</h1>
+  </div>
+  <div class="column gap-10 p-10">
+    <h2>Sockets</h2>
     <div class="row align-center gap-10">
       <p>Video Socket</p>
       <span class="text-green" v-if="videoConnected">Connected</span>
       <span class="text-red" v-else>Disconnected</span>
       <button
         v-if="!videoConnected" @click="connectVideo"
-        class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
+        class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
         Reconnect
       </button>
     </div>
@@ -27,12 +27,31 @@ const template = `
       <span class="text-red" v-else>Disconnected</span>
       <button
         v-if="!stateConnected" @click="connectState"
-        class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
+        class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
         Reconnect
       </button>
     </div>
   </div>
-  <p v-if="stateSocket.isStopped">Socket is stopped</p>
+  <div class="column gap-10 p-10">
+    <h2>Commands</h2>
+    <div class="row gap-10">
+      <button
+        @click="send(0x0001)"
+        class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
+        Send Connection Request
+      </button>
+      <button
+        @click="send(0x0054)"
+        class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
+        Takeoff
+      </button>
+      <button
+        @click="send(0x0055)"
+        class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
+        Land
+      </button>
+    </div>
+  </div>
   <pre>{{ state }}</pre>
   <div v-show="connected" ref="videoWrapper"></div>
 </div>
@@ -42,12 +61,11 @@ new Vue({
   el: '#app',
   template,
   data() {
-    console.log((this as any).connectVideo);
     return {
       player: new Player({ size: { width: 1280, height: 720 }}),
-      state: null as null | any,
-      stateSocket: new WebSocket(`wss://${window.location.host}/state`),
-      videoSocket: new WebSocket(`wss://${window.location.host}/video`),
+      state: {} as any,
+      stateSocket: null as (null | WebSocket),
+      videoSocket: null as (null | WebSocket),
       stateConnected: false,
       videoConnected: false,
       subscriptions: [] as Subscription[],
@@ -55,6 +73,7 @@ new Vue({
   },
   created() {
     (window as any).app = this;
+    this.connectState();
     // this.connectVideo();
   },
   mounted() {
@@ -74,8 +93,16 @@ new Vue({
     },
   },
   methods: {
+    send(command: number, data: any = null) {
+      if (!this.stateConnected) return;
+
+      this.stateSocket!.send(JSON.stringify({
+        command,
+        data,
+      }));
+    },
     connectState() {
-      const stateSocket = this.stateSocket.readyState !== WebSocket.OPEN && this.stateSocket.readyState !== WebSocket.CONNECTING
+      const stateSocket = (!this.stateSocket || this.stateSocket!.readyState !== WebSocket.OPEN && this.stateSocket.readyState !== WebSocket.CONNECTING)
         ? new WebSocket(`wss://${window.location.host}/state`)
         : this.stateSocket;
       const { readyState } = stateSocket;
@@ -86,14 +113,14 @@ new Vue({
         this.stateConnected = false;
       };
       stateSocket.onclose = () => this.stateConnected = false;
-      stateSocket.onmessage = e => this.state = e.data;
+      stateSocket.onmessage = e => this.state = JSON.parse(e.data);
       this.stateSocket = stateSocket;
     },
     connectVideo() {
-      const { readyState } = this.videoSocket;
-      const videoSocket = readyState !== WebSocket.OPEN && readyState !== WebSocket.CONNECTING
+      const videoSocket = (!this.videoSocket || this.videoSocket!.readyState !== WebSocket.OPEN && this.videoSocket.readyState !== WebSocket.CONNECTING)
         ? new WebSocket(`wss://${window.location.host}/video`)
         : this.videoSocket;
+      const { readyState } = videoSocket;
       this.videoConnected = readyState === WebSocket.OPEN;
       videoSocket.onopen = () => this.videoConnected = true;
       videoSocket.onerror = errorEvent => {
@@ -105,11 +132,6 @@ new Vue({
       };
       videoSocket.onmessage = e => this.player.decode(e.data, { startProcessing: performance.now() });
       this.videoSocket = videoSocket;
-    },
-  },
-  watch: {
-    ['videoSocket'](is, was) {
-      console.log(`videoSocket.readyState changed from ${was} to ${is}`);
     },
   },
 });
