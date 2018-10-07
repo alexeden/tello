@@ -20,7 +20,7 @@
     "backoff-rxjs": "0.0.10",
     "chalk": "^2.4.1",
     "ramda": "^0.25.0",
-    "rxjs": "6.3.2"
+    "rxjs": "^6.3.3"
   },
   "devDependencies": {
     "@types/crc": "^3.4.0",
