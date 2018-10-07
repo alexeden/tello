@@ -49,13 +49,6 @@ const spawnEncoder = () => {
 };
 
 (async () => {
-  videoWsServer.on('connection', () => console.log('got a connection on the video server'));
-  stateWsServer.on('connection', socket => {
-    socket.on('message', data => {
-      console.log('got message from client: ', data);
-    });
-    console.log('got a connection on the state server');
-  });
 
   const broadcastVideo = SocketUtils.createBroadcaster(videoWsServer);
   const broadcastState = SocketUtils.createBroadcaster(stateWsServer);
@@ -78,6 +71,13 @@ const spawnEncoder = () => {
     }
   });
 
+  videoWsServer.on('connection', () => console.log('got a connection on the video server'));
+  stateWsServer.on('connection', socket => {
+    socket.on('message', data => {
+      console.log('got message from client: ', data);
+    });
+    console.log('got a connection on the state server');
+  });
 
   drone.videoStream.subscribe(chunk => h264encoder.stdin.write(chunk));
   drone.stateStream.subscribe(state => broadcastState(JSON.stringify(state)));

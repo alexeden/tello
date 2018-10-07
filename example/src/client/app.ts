@@ -55,18 +55,17 @@ new Vue({
   template,
   data() {
     return {
+      player: new Player({ size: { width: 1280, height: 720 }}),
       state: null as null | any,
       stateSocket: new WebSocket(`wss://${window.location.host}/state`),
-      // stateSocket: new WebSocketSubject(`wss://${window.location.host}/state`),
+      videoSocket: new WebSocket(`wss://${window.location.host}/video`),
       stateConnected: false,
       videoConnected: false,
-      videoSocket: new WebSocket(`wss://${window.location.host}/video`),
       subscriptions: [] as Subscription[],
-      player: new Player({ size: { width: 1280, height: 720 }}),
     };
   },
   created() {
-    this.connectVideo();
+    // this.connectVideo();
   },
   mounted() {
     (window as any).app = this;
@@ -92,17 +91,8 @@ new Vue({
       sub.unsubscribe();
     }
   },
-  computed: {
-    // stateConnected(): boolean {
-    //   return this.stateSocket.readyState !== WebSocket.OPEN;
-    // },
-    // videoConnected(): boolean {
-    //   return this.videoSocket.readyState !== WebSocket.OPEN;
-    // },
-  },
   methods: {
     connectState() {
-      console.log('connecting state');
       const stateSocket = this.stateSocket.readyState !== WebSocket.OPEN && this.stateSocket.readyState !== WebSocket.CONNECTING
         ? new WebSocket(`wss://${window.location.host}/state`)
         : this.stateSocket;
@@ -135,6 +125,11 @@ new Vue({
       };
       videoSocket.onmessage = e => this.player.decode(e.data, { startProcessing: performance.now() });
       this.videoSocket = videoSocket;
+    },
+  },
+  watch: {
+    ['videoSocket'](is, was) {
+      console.log(`videoSocket.readyState changed from ${was} to ${is}`);
     },
   },
 });
