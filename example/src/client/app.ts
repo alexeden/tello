@@ -6,11 +6,11 @@ import { Player } from './player';
 const template = `
 <div class="column gap-20">
   <div class="row gap-10">
-    <div class="column gap-20">
-      <div class="column gap-10 p-10">
+    <div class="column gap-20 p-10">
+      <div class="column gap-10">
         <h1>Hello, Tello</h1>
       </div>
-      <div class="column gap-10 p-10">
+      <div class="column gap-10">
         <h2>Sockets</h2>
         <div class="row align-center gap-10">
           <p>Video Socket</p>
@@ -34,7 +34,7 @@ const template = `
           </button>
         </div>
       </div>
-      <div class="column gap-10 p-10">
+      <div v-if="stateConnected" class="column gap-10">
         <h2>Commands</h2>
         <div class="row gap-10">
           <button
