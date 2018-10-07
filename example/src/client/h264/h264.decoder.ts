@@ -1,5 +1,5 @@
   // tslint:disable variable-name
-import { H264ModuleOptions, DecodedBufferCallback } from './h264.types';
+import { H264ModuleOptions, DecodedBufferCallback, DecodedBufferInfo } from './h264.types';
 import { H264DecoderAssemblyEnvironment } from './assembly-environment';
 import wasmPath = require('./h264.decoder.wasm');
 
@@ -12,7 +12,7 @@ export class H264Decoder {
   private readonly pictureBuffers: { [heapLoc: number]: Uint8Array } = {};
   private streamBuffer: Uint8Array | undefined;
   private wasmInstance: WebAssembly.Instance | undefined;
-  private info = {};
+  private info: DecodedBufferInfo | {} = {};
 
   readonly decodedImageListener: DecodedBufferCallback;
   readonly decodedHeaderListener: DecodedBufferCallback;
@@ -34,7 +34,7 @@ export class H264Decoder {
        */
       (heapLoc, width, height, info) => {
         const buffer = this.cacheBuffer(heapLoc, width, height);
-        const finalInfo = { ...this.info, ...info, finishDecoding: H264Decoder.now() };
+        const finalInfo = { ...this.info, ...info, finishDecoding: H264Decoder.now() } as DecodedBufferInfo;
         this.info = {};
         this.decodedImageListener(buffer, width, height, finalInfo);
       },

@@ -1,5 +1,5 @@
 import { WebGLCanvas } from './webgl-canvas';
-import { H264Decoder } from './h264';
+import { H264Decoder, DecodedBufferInfo } from './h264';
 
 interface Size {
   height: number;
@@ -7,35 +7,25 @@ interface Size {
 }
 
 interface PlayerOptions {
-  size?: Size;
-  statsListener?: (stats: PlayerStats) => void;
+  size: Size;
 }
 
 interface Frame extends Size {
   buffer: Uint8Array;
-  infos: any;
-}
-
-interface PlayerStats {
-  processing: { start: number, finish: number };
-  decoding: { start: number, finish: number };
-  rendering: { start: number, finish: number };
+  info: DecodedBufferInfo;
 }
 
 export class Player {
   private readonly webGLCanvas: WebGLCanvas;
   private readonly decoder: H264Decoder;
   readonly canvas: HTMLCanvasElement;
-  statsListener: (stats: PlayerStats) => void;
   size: Size;
 
   constructor(options: PlayerOptions) {
     (window as any).player = this;
-    this.statsListener = options.statsListener || (() => { /* no-op */ });
-
     this.size = {
-      width: options.size && options.size.width || 200,
-      height: options.size && options.size.height || 200,
+      width: options.size.width,
+      height: options.size.height,
     };
 
     this.canvas = Player.createCanvas(this.size);
@@ -49,19 +39,10 @@ export class Player {
     this.decoder.start();
   }
 
-  decodedImageListener(buffer: Uint8Array, width: number, height: number, infos: any) {
-    const renderStats = this.renderFrame({ buffer, height, width, infos });
-    this.statsListener({
-      processing: {
-        // start: data.infos.startProcessing,
-        finish: performance.now(),
-      },
-      rendering: renderStats,
-      decoding: {
-        // start: info.startDecoding || -1,
-        // finish: info.finishDecoding || -1,
-      },
-    } as any);
+  decodedImageListener(buffer: Uint8Array, width: number, height: number, info: DecodedBufferInfo) {
+    const frame: Frame = { buffer, height, width, info };
+    (window as any).frame = frame;
+    this.renderFrame(frame);
   }
 
   decode(data: string | Uint8Array, info: any = {}) {

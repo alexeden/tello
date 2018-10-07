@@ -4,8 +4,14 @@ export interface H264ModuleOptions {
   totalMemory?: number;
 }
 
-export type DecodedHeapCallback = (heapLoc: number, width: number, height: number, infos?: object) => void;
-export type DecodedBufferCallback = (buffer: Uint8Array, width: number, height: number, infos?: object) => void;
+export type DecodedHeapCallback = (heapLoc: number, width: number, height: number, infos?: DecodedBufferInfo) => void;
+export type DecodedBufferCallback = (buffer: Uint8Array, width: number, height: number, infos?: DecodedBufferInfo) => void;
+
+export interface DecodedBufferInfo {
+  startDecoding: number;
+  finishDecoding: number;
+  [prop: string]: any;
+}
 
 
 /**

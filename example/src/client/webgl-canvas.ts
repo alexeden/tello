@@ -15,9 +15,10 @@ type YUV<T> = Record<'y' | 'u' | 'v', T>;
 interface WebGLCanvasOptions {
   canvas: HTMLCanvasElement;
   contextOptions?: WebGLContextAttributes;
-  width?: number;
-  height?: number;
+  width: number;
+  height: number;
 }
+
 /**
  * This class can be used to render output pictures from an H264bsdDecoder to a canvasElement element.
  * If available the content is rendered using WebGL.
@@ -34,9 +35,10 @@ export class WebGLCanvas {
   constructor(
     options: WebGLCanvasOptions
   ) {
+    (window as any).webGLCanvas = this;
     this.canvasElement = options.canvas;
-    this.width = options.width || 640;
-    this.height = options.height || 320;
+    this.width = options.width;
+    this.height = options.height;
     this.canvasElement.width = this.width;
     this.canvasElement.height = this.height;
     this.gl = this.canvasElement.getContext('webgl')!;
