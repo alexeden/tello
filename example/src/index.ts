@@ -6,47 +6,13 @@
  * Stream #0:0: Video: h264 (Main), yuv420p(progressive), 960x720, 25 fps, 25 tbr, 1200k tbn, 50 tbc
  */
 // ffmpeg -i udp://0.0.0.0:11111 -f sdl "window title"
-// import * as readline from 'readline';
-import { spawn, ChildProcess } from 'child_process';
 import {
   httpsServer,
   videoWsServer,
   stateWsServer,
 } from './server';
-import { SocketUtils } from './utils';
-import * as ws from 'ws';
+import { SocketUtils, VideoUtils } from './utils';
 import { Tello } from '../../dist';
-
-const spawnEncoder = () => {
-  return spawn(
-    'ffmpeg',
-    [
-      // Input options
-      '-fflags', 'nobuffer',
-      '-f', 'h264',
-      '-i', '-',
-      // Output options
-      '-f', 'h264',
-      '-dn', // disable data recording
-      '-an', // disable audio recording
-      '-sn', // disable subtitle recording
-      '-r', '25', // Set frame rate; duplicate or drop input frames to achieve constant output frame rate
-      '-vsync', 'drop', // video sync method (maybe try "drop")
-      '-bsf:v', 'h264_mp4toannexb',
-      '-fflags', 'flush_packets',
-      // Encoder-specific options
-      '-codec:v', 'libx264',
-      // '-threads', '4',
-      // '-thread_type', 'frame',
-      '-preset', 'ultrafast',
-      '-b:v', '3M',
-      '-tune', 'zerolatency',
-      '-x264-params', 'keyint=15',
-      '-movflags', 'frag_keyframe+empty_moov',
-      '-',
-    ]
-  );
-};
 
 (async () => {
 
@@ -55,7 +21,7 @@ const spawnEncoder = () => {
 
   const drone = new Tello();
 
-  const h264encoder = spawnEncoder();
+  const h264encoder = VideoUtils.spawnEncoder();
   const h264NalUnit = Buffer.from([0, 0, 0, 1]);
   let h264chunks: Buffer[] = [];
   h264encoder.stdout.on('data', (data: Buffer) => {
