@@ -49,13 +49,13 @@ module.exports = {
         test: /\.ts$/,
         loader: 'ts-loader',
       },
-      // {
-      //   test: /\.css$/,
-      //   use: [
-      //     'style-loader',
-      //     'css-loader',
-      //   ],
-      // },
+      {
+        test: /\.css$/,
+        use: [
+          'style-loader',
+          'css-loader',
+        ],
+      },
       {
         test: /\.wasm$/,
         type: 'javascript/auto', /** this disabled webpacks default handling of wasm */
