@@ -1,7 +1,7 @@
 import { TelloState } from './tello-state.types';
 import { Subject, ConnectableObservable, of } from 'rxjs';
 import { Packet, Command, TelloPacket } from '../protocol';
-import { publishReplay, scan } from 'rxjs/operators';
+import { publishReplay, scan, startWith } from 'rxjs/operators';
 import { PayloadParsers } from './parsers';
 
 type StateUpdate = (state: TelloState) => TelloState;
@@ -24,6 +24,7 @@ export class TelloStateManager {
 
     this.state = this.updates.asObservable().pipe(
       scan<StateUpdate, TelloState>((state, update) => update(state), init),
+      startWith(init),
       publishReplay(1)
     ) as ConnectableObservable<TelloState>;
 

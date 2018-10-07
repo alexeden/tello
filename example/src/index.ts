@@ -1,6 +1,15 @@
 import { videoWsServer, stateWsServer } from './server';
+import { sample, startWith, switchMapTo, map } from 'rxjs/operators';
+import { fromEvent, merge } from 'rxjs';
 import { SocketUtils, VideoUtils } from './utils';
-import { Tello } from '../../dist';
+import { Tello, Command } from '../../dist';
+
+interface CommandMessage {
+  command: Command;
+  data: object | null;
+}
+
+const isCommand = (value: any): value is Command => typeof Command[value] === 'string';
 
 (async () => {
   const drone = new Tello();
@@ -12,14 +21,26 @@ import { Tello } from '../../dist';
   VideoUtils.h264EncoderObservable(h264encoder).subscribe(frame => broadcastVideo(frame));
 
   const broadcastState = SocketUtils.createBroadcaster(stateWsServer);
+  const handleCommandMessage = ({ command, data }: CommandMessage) => {
+    switch (command) {
+      case Command.DoConnect:
+        drone.start();
+        break;
+    }
+  };
+
   stateWsServer.on('connection', socket => {
     socket.on('message', data => {
-      console.log('got message from client: ', data);
+      const msg = typeof data === 'string' ? JSON.parse(data) : {};
+      if (!isCommand(msg.command)) return;
+      handleCommandMessage(msg);
     });
-    console.log('got a connection on the state server');
   });
 
-  drone.stateStream.subscribe(state => broadcastState(JSON.stringify(state)));
+  merge(drone.stateStream, fromEvent(stateWsServer, 'connection').pipe(switchMapTo(drone.stateStream)))
+    .pipe(map(state => JSON.stringify(state)))
+    .subscribe(broadcastState);
+
 
   drone.start();
 })();
