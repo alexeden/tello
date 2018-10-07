@@ -7,80 +7,58 @@
  */
 // ffmpeg -i udp://0.0.0.0:11111 -f sdl "window title"
 // import * as readline from 'readline';
-import * as url from 'url';
-import * as path from 'path';
 import { spawn, ChildProcess } from 'child_process';
-import { httpsServer } from './server';
-// import { map, take, tap, filter } from 'rxjs/operators';
-
+import {
+  httpsServer,
+  videoWsServer,
+  stateWsServer,
+} from './server';
+import { SocketUtils } from './utils';
 import * as ws from 'ws';
 import { Tello } from '../../dist';
-import { IncomingMessage } from 'http';
-import { Socket } from 'net';
-
-const createBroadcast = (server: ws.Server) => {
-  return <T>(data: T): T => {
-    server.clients.forEach(client => {
-      if (client.readyState === ws.OPEN) {
-        try {
-          client.send(data);
-        }
-        catch (error) {
-          console.error(`Failed to send to WSS client with url ${client.url}`, error);
-        }
-      }
-    });
-    return data;
-  };
-};
 
 const spawnEncoder = () => {
   return spawn(
     'ffmpeg',
     [
+      // Input options
       '-fflags', 'nobuffer',
       '-f', 'h264',
       '-i', '-',
-      '-r', '30',
-      '-c:v', 'libx264',
-      '-b:v', '3M',
-      '-preset', 'ultrafast',
-      '-tune', 'zerolatency',
-      '-vsync', '0',
-      '-async', '1',
-      '-bsf:v', 'h264_mp4toannexb',
-      '-x264-params', 'keyint=15:scenecut=0',
-      '-movflags', 'frag_keyframe+empty_moov',
-      '-an',
+      // Output options
       '-f', 'h264',
+      '-dn', // disable data recording
+      '-an', // disable audio recording
+      '-sn', // disable subtitle recording
+      '-r', '25', // Set frame rate; duplicate or drop input frames to achieve constant output frame rate
+      '-vsync', 'drop', // video sync method (maybe try "drop")
+      '-bsf:v', 'h264_mp4toannexb',
+      '-fflags', 'flush_packets',
+      // Encoder-specific options
+      '-codec:v', 'libx264',
+      // '-threads', '4',
+      // '-thread_type', 'frame',
+      '-preset', 'ultrafast',
+      '-b:v', '3M',
+      '-tune', 'zerolatency',
+      '-x264-params', 'keyint=15',
+      '-movflags', 'frag_keyframe+empty_moov',
       '-',
     ]
   );
 };
 
 (async () => {
-  const videoWsServer = new ws.Server({ noServer: true });
-  const stateWsServer = new ws.Server({ noServer: true });
   videoWsServer.on('connection', () => console.log('got a connection on the video server'));
-  stateWsServer.on('connection', () => console.log('got a connection on the state server'));
-
-  httpsServer.on('upgrade', (request: IncomingMessage, socket: Socket, head: Buffer) => {
-    const pathname = url.parse(request.url!).pathname;
-    let wssServer: ws.Server;
-
-    switch (pathname) {
-      case '/video': wssServer = videoWsServer; break;
-      case '/state': wssServer = stateWsServer; break;
-      default: socket.destroy(); return;
-    }
-
-    wssServer.handleUpgrade(request, socket, head, clientSocket => {
-      wssServer.emit('connection', clientSocket, request);
+  stateWsServer.on('connection', socket => {
+    socket.on('message', data => {
+      console.log('got message from client: ', data);
     });
+    console.log('got a connection on the state server');
   });
 
-  const broadcastVideo = createBroadcast(videoWsServer);
-  const broadcastState = createBroadcast(stateWsServer);
+  const broadcastVideo = SocketUtils.createBroadcaster(videoWsServer);
+  const broadcastState = SocketUtils.createBroadcaster(stateWsServer);
 
   const drone = new Tello();
 
