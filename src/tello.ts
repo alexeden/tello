@@ -30,6 +30,7 @@ export class Tello {
     this.packetStream.subscribe(async packet => {
       switch (packet.command) {
         case Command.LogHeader:
+          console.log(packet.payload.toString());
           const ackPacket = this.generator.logHeader(packet.payload.slice(0, 2));
           await this.send(ackPacket);
           console.log(`Log header ack sent: `, JSON.stringify(ackPacket, null, 2));
@@ -112,6 +113,12 @@ export class Tello {
   }
 
   async start() {
+    let interval;
+    // tslint:disable-next-line:no-conditional-assignment
+    while (interval = this.intervals.shift()) {
+      clearInterval(interval);
+    }
+
     const connectionRequest = this.generator.createConnectionRequest(TelloVideoClient.port);
     const connected = new Promise((ok, err) => {
       this.messageStream.subscribe(msg =>
