@@ -30,23 +30,22 @@ export class Tello {
     this.packetStream.subscribe(async packet => {
       switch (packet.command) {
         case Command.LogHeader:
-          console.log(packet.payload.toString());
           const ackPacket = this.generator.logHeader(packet.payload.slice(0, 2));
           await this.send(ackPacket);
           console.log(`Log header ack sent: `, JSON.stringify(ackPacket, null, 2));
       }
     });
 
-    const logCommand = pad(20, 'left', ' ');
-    const logLength = pad(5, 'right', ' ');
-    this.commandSocket.asObservable().pipe(
-      filter(TelloPacket.bufferIsPacket)
-    )
-    .subscribe(buffer => {
-      const parsed = TelloPacket.fromBuffer(buffer);
-      const label = TelloPacket.getCommandLabel(parsed.command);
-      console.log(`${logCommand(label)}${logLength(parsed.command)}${logLength(buffer.length)}${logLength(parsed.payload.length)}`);
-    });
+    // const logCommand = pad(20, 'left', ' ');
+    // const logLength = pad(5, 'right', ' ');
+    // this.commandSocket.asObservable().pipe(
+    //   filter(TelloPacket.bufferIsPacket)
+    // )
+    // .subscribe(buffer => {
+    //   const parsed = TelloPacket.fromBuffer(buffer);
+    //   const label = TelloPacket.getCommandLabel(parsed.command);
+    //   console.log(`${logCommand(label)}${logLength(parsed.command)}${logLength(buffer.length)}${logLength(parsed.payload.length)}`);
+    // });
 
     // Route incoming packets to the state manager
     this.packetStream.subscribe(packet => {
