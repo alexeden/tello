@@ -34,7 +34,7 @@ const template = `
   </div>
   <p v-if="stateSocket.isStopped">Socket is stopped</p>
   <pre>{{ state }}</pre>
-  <div ref="videoWrapper"></div>
+  <div v-show="connected" ref="videoWrapper"></div>
 </div>
 `;
 
@@ -42,6 +42,7 @@ new Vue({
   el: '#app',
   template,
   data() {
+    console.log((this as any).connectVideo);
     return {
       player: new Player({ size: { width: 1280, height: 720 }}),
       state: null as null | any,
@@ -66,6 +67,11 @@ new Vue({
     while (sub = this.subscriptions.shift()) {
       sub.unsubscribe();
     }
+  },
+  computed: {
+    connected(): boolean {
+      return this.stateConnected && this.videoConnected;
+    },
   },
   methods: {
     connectState() {
