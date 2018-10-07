@@ -1,47 +1,35 @@
 // tslint:disable no-invalid-this
 import Vue from 'vue';
-import { WebSocketSubject } from 'rxjs/webSocket';
+// import { WebSocketSubject } from 'rxjs/webSocket';
 import { Subscription, pipe } from 'rxjs';
-import { tap } from 'rxjs/operators';
-import { retryBackoff } from 'backoff-rxjs';
+// import { tap } from 'rxjs/operators';
+// import { retryBackoff } from 'backoff-rxjs';
 import { Player } from './player';
-import { error } from 'util';
-
-// const h264Player = new Player({
-//   size: { width: 1280, height: 720 },
-//   statsListener: stats => (window as any).stats = stats,
-// });
-
-// document.getElementById('videoFeed')!.appendChild(h264Player.canvas);
-
-// try {
-//   const videoSocket = new WebSocket(`wss://${window.location.host}/video`);
-//   videoSocket.onerror = () => videoSocket.close();
-//   videoSocket.onmessage = e =>
-//     e.data !== 'false'
-//       ? h264Player.decode(e.data, { startProcessing: performance.now() })
-//       : console.log(e);
-// }
-// catch (e) {
-//   console.log('video socket error: ', e);
-// }
-
 
 const template = `
 <div class="column gap-10">
   <h1>Hello, Tello</h1>
-  <div class="column">
+  <div class="column gap-10">
     <div class="row align-center gap-10">
       <p>Video Socket</p>
-      <span class="c-green" v-if="videoConnected">Connected</span>
-      <span class="c-alternate" v-else>Disconnected</span>
-      <button v-if="!videoConnected" @click="connectVideo">Reconnect</button>
+      <span class="text-green" v-if="videoConnected">Connected</span>
+      <span class="text-red" v-else>Disconnected</span>
+      <button
+        v-if="!videoConnected" @click="connectVideo"
+        class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
+        Reconnect
+      </button>
     </div>
+
     <div class="row align-center gap-10">
       <p>State Socket</p>
-      <span class="c-green" v-if="stateConnected">Connected</span>
-      <span class="c-alternate" v-else>Disconnected</span>
-      <button v-if="!stateConnected" @click="connectState">Reconnect</button>
+      <span class="text-green" v-if="stateConnected">Connected</span>
+      <span class="text-red" v-else>Disconnected</span>
+      <button
+        v-if="!stateConnected" @click="connectState"
+        class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
+        Reconnect
+      </button>
     </div>
   </div>
   <p v-if="stateSocket.isStopped">Socket is stopped</p>
@@ -65,24 +53,12 @@ new Vue({
     };
   },
   created() {
+    (window as any).app = this;
     // this.connectVideo();
   },
   mounted() {
-    (window as any).app = this;
     const videoWrapper = this.$refs.videoWrapper as HTMLDivElement;
     videoWrapper.appendChild(this.player.canvas);
-    // this.videoSocket.onerror = () => this.videoSocket.close();
-    // this.videoSocket.onmessage = e => this.player.decode(e.data, { startProcessing: performance.now() });
-
-    // const stateSubscription = this.stateSocket.asObservable()
-    //   .pipe(retryBackoff({ initialInterval: 1000 }))
-    //   .subscribe(
-    //     msg => this.state = msg,
-    //     error => console.error('State stream error: ', error)
-    //   );
-
-
-    // this.subscriptions.push(stateSubscription);
   },
   beforeDestroy() {
     let sub;
@@ -104,9 +80,7 @@ new Vue({
         this.stateConnected = false;
       };
       stateSocket.onclose = () => this.stateConnected = false;
-      stateSocket.onmessage = e => {
-        this.state = e.data;
-      };
+      stateSocket.onmessage = e => this.state = e.data;
       this.stateSocket = stateSocket;
     },
     connectVideo() {
