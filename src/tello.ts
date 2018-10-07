@@ -30,10 +30,15 @@ export class Tello {
     this.packetStream.subscribe(async packet => {
       switch (packet.command) {
         case Command.LogHeader:
-          console.log(packet.payload.toString());
           const ackPacket = this.generator.logHeader(packet.payload.slice(0, 2));
           await this.send(ackPacket);
-          console.log(`Log header ack sent: `, JSON.stringify(ackPacket, null, 2));
+          break;
+        case Command.DoTakeoff:
+          console.log('takeoff command got this payload: ', packet.payload);
+          break;
+        case Command.DoLand:
+          console.log('takeoff command got this payload: ', packet.payload);
+          break;
       }
     });
 
@@ -147,6 +152,10 @@ export class Tello {
     await this.send(this.generator.queryJpegQuality());   /* 55 */
     await this.send(this.generator.setVideoBitrate());    /* 32 */
     await this.send(this.generator.switchPicVid(1));      /* 49 */
+
+    await this.send(this.generator.doTakeoff());
+
+    // setTimeout(() => this.send(this.generator.doLand()), 7000);
   }
 
   stop() {
