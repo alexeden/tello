@@ -1,7 +1,8 @@
-import { spawn } from 'child_process';
+import { spawn, ChildProcess } from 'child_process';
+import { Subject } from 'rxjs';
 
 export class VideoUtils {
-  static spawnEncoder() {
+  static spawnEncoder(): ChildProcess {
     return spawn(
       'ffmpeg',
       [
@@ -30,5 +31,28 @@ export class VideoUtils {
         '-',
       ]
     );
+  }
+
+  static h264EncoderObservable(h264encoder: ChildProcess) {
+    const h264NalUnit = Buffer.from([0, 0, 0, 1]);
+    let h264chunks: Buffer[] = [];
+    const outgoingSubject = new Subject<string>();
+    h264encoder.stdout.on('data', (data: Buffer) => {
+      const idx = data.indexOf(h264NalUnit);
+      if (idx > -1 && h264chunks.length > 0) {
+        h264chunks.push(data.slice(0, idx));
+        outgoingSubject.next(Buffer.concat(h264chunks).toString('binary'));
+        h264chunks = [];
+        h264chunks.push(data.slice(idx));
+      }
+      else {
+        h264chunks.push(data);
+      }
+    });
+
+    h264encoder.stdout.on('error', err => outgoingSubject.error(err));
+    h264encoder.stdout.on('close', () => outgoingSubject.complete());
+
+    return outgoingSubject.asObservable();
   }
 }
