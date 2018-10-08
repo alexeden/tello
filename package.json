@@ -12,7 +12,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon",
-    "build": "tsc -p src",
+    "build": "rm -r dist && tsc -p src",
     "test": "ts-node -P src/tsconfig.json src/test.ts",
     "postinstall": "npm run build"
   },

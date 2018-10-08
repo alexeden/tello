@@ -9,7 +9,7 @@ import {
 import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
 import { TelloStateManager, TelloState } from './state';
 import { TelloVideoUtils } from './video';
-import { CameraMode } from 'lib';
+import { CameraMode } from './lib';
 
 
 export class Tello {
