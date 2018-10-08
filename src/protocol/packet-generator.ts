@@ -68,6 +68,20 @@ export class TelloPacketGenerator {
     });
   }
 
+  querySsid(): Packet {
+    return TelloPacket.of({
+      command: Command.QuerySsid,
+      sequence: this.sequence++,
+    });
+  }
+
+  querySsidPass(): Packet {
+    return TelloPacket.of({
+      command: Command.QuerySsidPass,
+      sequence: this.sequence++,
+    });
+  }
+
   queryVersion(): Packet {
     return TelloPacket.of({
       command: Command.QueryVersion,
@@ -93,6 +107,16 @@ export class TelloPacketGenerator {
     return TelloPacket.of({
       command: Command.QueryWifiRegion,
       sequence: this.sequence++,
+    });
+  }
+
+  setCameraMode(mode: CameraMode): Packet {
+    const payload = Buffer.of(mode);
+
+    return TelloPacket.of({
+      command: Command.SetCameraMode,
+      sequence: this.sequence++,
+      payload,
     });
   }
 

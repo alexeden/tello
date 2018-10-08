@@ -9,6 +9,7 @@ import {
 import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
 import { TelloStateManager, TelloState } from './state';
 import { TelloVideoUtils } from './video';
+import { CameraMode } from 'lib';
 
 
 export class Tello {
@@ -117,12 +118,20 @@ export class Tello {
     ));
   }
 
-  async start() {
+  /**
+   * Cancels any active packets requests being sent on an interval.
+   * Returns the number of intervals that were stopped.
+   */
+  clearIntervalRequests() {
+    const count = this.intervals.length;
     let interval;
     // tslint:disable-next-line:no-conditional-assignment
-    while (interval = this.intervals.shift()) {
-      clearInterval(interval);
-    }
+    while (interval = this.intervals.shift()) clearInterval(interval);
+    return count;
+  }
+
+  async start() {
+    this.clearIntervalRequests();
 
     const connectionRequest = this.generator.createConnectionRequest(TelloVideoClient.port);
     const connected = new Promise((ok, err) => {
@@ -139,32 +148,26 @@ export class Tello {
     await this.send(this.generator.setDateTime());
     console.log('connected!');
 
-    this.sendOnInterval(20, () => this.generator.setStick());
     this.sendOnInterval(2000, () => this.generator.setDateTime());
+    this.sendOnInterval(20, () => this.generator.setStick());
     this.sendOnInterval(1000, () => this.generator.queryVideoSpsPps());
+    await this.send(this.generator.setCameraMode(CameraMode.Video));
+    await this.send(this.generator.setExposureValue());   /* 52 */
+    await this.send(this.generator.setVideoBitrate());    /* 32 */
+    await this.send(this.generator.queryAttitude());      /* 4185 */
+    await this.send(this.generator.queryHeightLimit());   /* 4182 */
+    await this.send(this.generator.queryJpegQuality());   /* 55 */
+    await this.send(this.generator.queryLowBattThresh()); /* 4183 */
+    await this.send(this.generator.querySsid());          /* 17 */
+    await this.send(this.generator.querySsidPass());      /* 19 */
     await this.send(this.generator.queryVersion());       /* 69 */
     await this.send(this.generator.queryVideoBitrate());  /* 40 */
-    await this.send(this.generator.queryHeightLimit());   /* 4182 */
-    await this.send(this.generator.queryLowBattThresh()); /* 4183 */
-    await this.send(this.generator.queryAttitude());      /* 4185 */
     await this.send(this.generator.queryWifiRegion());    /* 21 */
-    await this.send(this.generator.setExposureValue());   /* 52 */
-    await this.send(this.generator.queryJpegQuality());   /* 55 */
-    await this.send(this.generator.setVideoBitrate());    /* 32 */
-    await this.send(this.generator.switchPicVid(1));      /* 49 */
-
-    await this.send(this.generator.doTakeoff());
-
-    // setTimeout(() => this.send(this.generator.doLand()), 7000);
   }
 
   stop() {
     this.stopSignal.next('stop!');
-    let interval;
-    // tslint:disable-next-line:no-conditional-assignment
-    while (interval = this.intervals.shift()) {
-      clearInterval(interval);
-    }
+    this.clearIntervalRequests();
     this.generator.reset();
   }
 
