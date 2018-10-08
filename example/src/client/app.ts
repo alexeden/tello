@@ -38,6 +38,9 @@ new Vue({
     connected(): boolean {
       return this.stateConnected && this.videoConnected;
     },
+    battery(): any {
+      return this.state && this.state.battery || {};
+    },
   },
   methods: {
     send(command: number, data: any = null) {

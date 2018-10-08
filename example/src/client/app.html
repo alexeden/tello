@@ -7,25 +7,41 @@
       <div class="column gap-10">
         <h2>Sockets</h2>
         <div class="row align-center gap-10">
-          <p>Video Socket</p>
-          <span class="text-green" v-if="videoConnected">Connected</span>
-          <span class="text-red" v-else>Disconnected</span>
-          <button
-            v-if="!videoConnected" @click="connectVideo"
-            class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
-            Reconnect
-          </button>
+          <div class="row justify-space-between gap-10">
+            <p>Video Socket</p>
+            <span class="text-green" v-if="videoConnected">Connected</span>
+            <span class="text-red" v-else>Disconnected</span>
+          </div>
+          <div class="row grow justify-end">
+            <button
+              v-if="!videoConnected" @click="connectVideo"
+              class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
+              Connect
+            </button>
+          </div>
         </div>
 
         <div class="row align-center gap-10">
-          <p>State Socket</p>
-          <span class="text-green" v-if="stateConnected">Connected</span>
-          <span class="text-red" v-else>Disconnected</span>
-          <button
-            v-if="!stateConnected" @click="connectState"
-            class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
-            Reconnect
-          </button>
+          <div class="row justify-space-between gap-10">
+            <p>State Socket</p>
+            <span class="text-green" v-if="stateConnected">Connected</span>
+            <span class="text-red" v-else>Disconnected</span>
+          </div>
+          <div class="row grow justify-end">
+            <button
+              v-if="!stateConnected" @click="connectState"
+              class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
+              Connect
+            </button>
+          </div>
+        </div>
+      </div>
+      <div v-if="stateConnected" class="column gap-10">
+        <h2>State</h2>
+        <div class="row gap-10 justify-space-between align-center">
+          <p class="grow">Battery</p>
+          <code>{{ battery.percentage || 0 }}%</code>
+          <code>{{ battery.batteryLeft || 0 }}</code>
         </div>
       </div>
       <div v-if="stateConnected" class="column gap-10">

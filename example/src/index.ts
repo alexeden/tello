@@ -4,7 +4,14 @@ import { fromEvent, merge } from 'rxjs';
 import { SocketUtils, VideoUtils } from './utils';
 import { Tello, Command } from '../../dist';
 
+enum MessageType {
+  Command = 'command',
+  State = 'state',
+  Error = 'error',
+}
+
 interface CommandMessage {
+  type: MessageType.Command;
   command: Command;
   data: object | null;
 }
@@ -21,7 +28,7 @@ const isCommand = (value: any): value is Command => typeof Command[value] === 's
   VideoUtils.h264EncoderObservable(h264encoder).subscribe(frame => broadcastVideo(frame));
 
   const broadcastState = SocketUtils.createBroadcaster(stateWsServer);
-  const handleCommandMessage = ({ command, data }: CommandMessage) => {
+  const handleCommandMessage = ({ command }: CommandMessage) => {
     switch (command) {
       case Command.DoConnect:
         drone.start();
