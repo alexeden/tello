@@ -23,6 +23,7 @@ export class UdpSubject extends Subject<UdpMessage> {
     return new UdpSubject(client, target || null);
   }
 
+  private locked = false;
   private socket: udp.Socket;
   private bytesSent = 0;
   private messagesSent = 0;
@@ -70,8 +71,21 @@ export class UdpSubject extends Subject<UdpMessage> {
     super.error(error);
   }
 
+  lock() {
+    this.locked = true;
+  }
+
+  unlock() {
+    this.locked = false;
+  }
+
+  get isLocked() {
+    return this.locked;
+  }
+
   async next(sendable: UdpMessage): Promise<boolean> {
-    if (!this.target) {
+    if (!this.target || this.locked) {
+      console.log('LOCKED, ignoring command');
       return false;
     }
 

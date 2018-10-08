@@ -57,7 +57,12 @@ const createTimestamp = () => {
   //   console.log('h264encoder stderr data: ', data.toString());
   // });
 
-  drone.start();
+  await drone.start();
+
+  // await drone.takeoff();
+  await drone.land();
+
+  setTimeout(() => drone.land(), 7000);
 })();
 
 // (async () => {

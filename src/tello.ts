@@ -102,11 +102,28 @@ export class Tello {
     );
   }
 
+  private async sendAndLock(message: Packet) {
+    const buffer = TelloPacket.toBuffer(message);
+    const sent = await this.commandSocket.next(buffer);
+    console.log(`send and lock command sent? ${sent}`);
+    this.commandSocket.lock();
+    await new Promise((ok, err) => {
+      this.packetStream.pipe(
+        filter(pkt => pkt.command === message.command)
+      )
+      .subscribe(ok);
+
+      setTimeout(() => err(`The drone never sent acknowledgement of the ${TelloPacket.getCommandLabel(message.command)} command.`), 5000);
+    });
+    console.log('got ack, unlocking socket');
+    this.commandSocket.unlock();
+  }
+
   private async send(message: Packet | Buffer) {
     const buffer = message instanceof Buffer ? message : TelloPacket.toBuffer(message);
     const sent = await this.commandSocket.next(buffer);
     if (!sent) {
-      throw new Error(`Failed to send command with ID "${message instanceof Buffer ? message : message.command}"`);
+      console.error(`Failed to send command with ID "${message instanceof Buffer ? message : message.command}"`);
     }
     return sent;
   }
@@ -147,10 +164,9 @@ export class Tello {
     await connected;
     await this.send(this.generator.setDateTime());
     console.log('connected!');
-
     this.sendOnInterval(2000, () => this.generator.setDateTime());
-    this.sendOnInterval(20, () => this.generator.setStick());
-    this.sendOnInterval(1000, () => this.generator.queryVideoSpsPps());
+    this.sendOnInterval(50, () => this.generator.setStick());
+    this.sendOnInterval(2000, () => this.generator.queryVideoSpsPps());
     await this.send(this.generator.setCameraMode(CameraMode.Video));
     await this.send(this.generator.setExposureValue());   /* 52 */
     await this.send(this.generator.setVideoBitrate());    /* 32 */
@@ -172,10 +188,10 @@ export class Tello {
   }
 
   takeoff() {
-    return this.send(this.generator.doTakeoff());
+    return this.sendAndLock(this.generator.doTakeoff());
   }
 
   land() {
-    return this.send(this.generator.doLand());
+    return this.sendAndLock(this.generator.doLand());
   }
 }
