@@ -56,10 +56,17 @@ export class PayloadParsers {
 
   // Command 55
   static parseJpegQuality(payload: Buffer): number {
-    console.log('parseJpegQuality payload: ', payload);
-
-    // if (payload.length < 1) return 0;
     return payload.readInt8(0);
+  }
+
+  // Command 17
+  static parseSsid(payload: Buffer): string {
+    return payload.toString();
+  }
+
+  // Command 17
+  static parseSsidPassword(payload: Buffer): string {
+    return payload.toString();
   }
 
   // Command 69

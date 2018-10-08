@@ -21,6 +21,8 @@ export interface Wifi {
   interference: number;
   region: string;
   signal: number;
+  ssid: string;
+  password: string;
 }
 
 export interface Flight {

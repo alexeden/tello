@@ -49,6 +49,22 @@ export class TelloStateManager {
         }));
         return true;
 
+      case Command.QuerySsid:
+        const ssid = PayloadParsers.parseSsid(payload);
+        this.updates.next(state => ({
+          ...state,
+          wifi: { ...state.wifi, ssid },
+        }));
+        return true;
+
+      case Command.QuerySsidPass:
+        const password = PayloadParsers.parseSsidPassword(payload);
+        this.updates.next(state => ({
+          ...state,
+          wifi: { ...state.wifi, password },
+        }));
+        return true;
+
       case Command.QueryVideoBitrate:
       case Command.SetVideoBitrate:
         const bitrate = PayloadParsers.parseVideoBitrate(payload);
