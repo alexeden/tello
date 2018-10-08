@@ -2,67 +2,7 @@
 import Vue from 'vue';
 import { Subscription, pipe } from 'rxjs';
 import { Player } from './player';
-
-const template = `
-<div class="column gap-20">
-  <div class="row gap-10">
-    <div class="column gap-20 p-10">
-      <div class="column gap-10">
-        <h1>Hello, Tello</h1>
-      </div>
-      <div class="column gap-10">
-        <h2>Sockets</h2>
-        <div class="row align-center gap-10">
-          <p>Video Socket</p>
-          <span class="text-green" v-if="videoConnected">Connected</span>
-          <span class="text-red" v-else>Disconnected</span>
-          <button
-            v-if="!videoConnected" @click="connectVideo"
-            class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
-            Reconnect
-          </button>
-        </div>
-
-        <div class="row align-center gap-10">
-          <p>State Socket</p>
-          <span class="text-green" v-if="stateConnected">Connected</span>
-          <span class="text-red" v-else>Disconnected</span>
-          <button
-            v-if="!stateConnected" @click="connectState"
-            class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
-            Reconnect
-          </button>
-        </div>
-      </div>
-      <div v-if="stateConnected" class="column gap-10">
-        <h2>Commands</h2>
-        <div class="row gap-10">
-          <button
-            @click="send(0x0001)"
-            class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
-            Send Connection Request
-          </button>
-          <button
-            @click="send(0x0054)"
-            class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
-            Takeoff
-          </button>
-          <button
-            @click="send(0x0055)"
-            class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
-            Land
-          </button>
-        </div>
-      </div>
-    </div>
-    <div class="p-10 grow">
-      <pre>{{ state }}</pre>
-    </div>
-  </div>
-
-  <div v-show="connected" ref="videoWrapper"></div>
-</div>
-`;
+import * as template from './app.html';
 
 new Vue({
   el: '#app',
