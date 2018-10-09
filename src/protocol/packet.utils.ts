@@ -27,8 +27,6 @@ export class TelloPacket {
   }
 
   static fromBuffer(buf: Buffer): Packet {
-    const n = (buf[1] + (buf[2] << 8)) >> 3;
-
     return {
       payload: buf.slice(9, buf.length - 2),
       sender: buf[4] & 0xC0,
