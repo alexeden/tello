@@ -1,6 +1,7 @@
+import * as path from 'path';
 import { Observable, Subject } from 'rxjs';
 import { map, filter, skipWhile, takeUntil, sampleTime } from 'rxjs/operators';
-import { UdpSubject, pad, tag } from './utils';
+import { UdpSubject, pad, tag, createTimestamp } from './utils';
 import {
   TelloCommandClient,
   TelloCommandServer,
@@ -9,7 +10,7 @@ import {
 import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
 import { TelloStateManager, TelloState } from './state';
 import { TelloVideoUtils } from './video';
-import { CameraMode } from './lib';
+import { CameraMode, Exposure, VideoBitrate } from './lib';
 
 
 export class Tello {
@@ -23,7 +24,11 @@ export class Tello {
   readonly stateStream: Observable<TelloState>;
 
   constructor() {
-    this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer).start();
+    const timestamp = createTimestamp();
+    const commandLogPath = path.resolve(__dirname, 'logs', `command-logs_${timestamp}.txt`);
+    this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer)
+      .attachLogger('commands', commandLogPath)
+      .start();
     this.videoSocket = UdpSubject.create(TelloVideoClient).start();
     this.generator = new TelloPacketGenerator();
     this.stateStream = this.stateManager.state;
@@ -162,23 +167,25 @@ export class Tello {
     await this.send(connectionRequest);
     console.log('connection request sent');
     await connected;
-    await this.send(this.generator.setDateTime());
+    // await this.send(this.generator.setDateTime());
     console.log('connected!');
-    this.sendOnInterval(2000, () => this.generator.setDateTime());
-    this.sendOnInterval(50, () => this.generator.setStick());
-    this.sendOnInterval(2000, () => this.generator.queryVideoSpsPps());
-    await this.send(this.generator.setCameraMode(CameraMode.Video));
-    await this.send(this.generator.setExposureValue());   /* 52 */
-    await this.send(this.generator.setVideoBitrate());    /* 32 */
-    await this.send(this.generator.queryAttitude());      /* 4185 */
-    await this.send(this.generator.queryHeightLimit());   /* 4182 */
-    await this.send(this.generator.queryJpegQuality());   /* 55 */
-    await this.send(this.generator.queryLowBattThresh()); /* 4183 */
-    await this.send(this.generator.querySsid());          /* 17 */
-    await this.send(this.generator.querySsidPass());      /* 19 */
-    await this.send(this.generator.queryVersion());       /* 69 */
-    await this.send(this.generator.queryVideoBitrate());  /* 40 */
-    await this.send(this.generator.queryWifiRegion());    /* 21 */
+
+    // this.sendOnInterval(2000, () => this.generator.setDateTime());
+    this.sendOnInterval(500, () => this.generator.setStick());
+    // this.sendOnInterval(250, () => this.generator.queryVideoSpsPps());
+
+    // await this.send(this.generator.setCameraMode(CameraMode.Video));
+    // await this.send(this.generator.setExposureValue(Exposure.Zero));
+    // await this.send(this.generator.setVideoBitrate(VideoBitrate.Auto));
+    // await this.send(this.generator.queryAttitude());      /* 4185 */
+    // await this.send(this.generator.queryHeightLimit());   /* 4182 */
+    // await this.send(this.generator.queryJpegQuality());   /* 55 */
+    // await this.send(this.generator.queryLowBattThresh()); /* 4183 */
+    // await this.send(this.generator.querySsid());          /* 17 */
+    // await this.send(this.generator.querySsidPass());      /* 19 */
+    // await this.send(this.generator.queryVersion());       /* 69 */
+    // await this.send(this.generator.queryVideoBitrate());  /* 40 */
+    // await this.send(this.generator.queryWifiRegion());    /* 21 */
   }
 
   stop() {

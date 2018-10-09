@@ -1,6 +1,8 @@
+import * as fs from 'fs';
 import * as udp from 'dgram';
 import { Subject } from 'rxjs';
 import { AddressInfo } from 'net';
+import { Writable } from 'stream';
 
 
 export interface UdpSocketData {
@@ -25,26 +27,41 @@ export class UdpSubject extends Subject<UdpMessage> {
 
   private locked = false;
   private socket: udp.Socket;
-  private bytesSent = 0;
-  private messagesSent = 0;
-  // private target: UdpTarget | null = null;
+  private logStream: fs.WriteStream | null = null;
+  label: string;
 
   constructor(
     readonly client: UdpTarget,
     readonly target: UdpTarget | null
-    // readonly socketType: udp.SocketType
   ) {
     super();
+    this.label = `${this.client.address}:${this.client.port}`;
     this.socket = udp.createSocket('udp4');
-
     this.socket.on('close', () => super.complete());
-
     this.socket.on('error', this.handleSocketError.bind(this));
+    this.socket.on('message', (msg, rinfo) => {
+      super.next(msg);
+      this.log('Rx', msg);
+    });
+  }
 
-    this.socket.on('message', (msg, rinfo) => super.next(msg));
+  attachLogger(
+    label: string,
+    logPath: string
+  ) {
+    this.label = label;
+    this.logStream = fs.createWriteStream(logPath);
+    return this;
+  }
 
-    // this.socket.on('listening', () => {
-    // });
+  private log(
+    origin: 'Tx' | 'Rx',
+    data: Buffer
+  ) {
+    if (this.logStream) {
+      const dataString = Array.from(data).map(n => '0x' + `00${n.toString(16)}`.slice(-2)).join(', ');
+      this.logStream.write(`${origin}\t${this.label}\t[${dataString}]\n`);
+    }
   }
 
   isListening(): null | AddressInfo {
@@ -96,8 +113,7 @@ export class UdpSubject extends Subject<UdpMessage> {
           ok(false);
         }
         else {
-          this.messagesSent++;
-          this.bytesSent += bytes;
+          this.log('Tx', sendable);
           ok(true);
         }
       });
