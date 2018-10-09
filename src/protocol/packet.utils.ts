@@ -31,8 +31,8 @@ export class TelloPacket {
       payload: buf.slice(9, buf.length - 2),
       sender: buf[4] & 0xC0,
       type: (buf[4] >> 3) & 0x07,
-      command: buf[5] | (buf[6] << 8),
-      sequence: buf[7] | (buf[8] << 8),
+      command: buf.readUInt16LE(5),
+      sequence: buf.readUInt16LE(7),
     };
   }
 
