@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { spawn } from 'child_process';
 import {
   map,
   take,
@@ -10,7 +11,8 @@ import {
   repeat,
 } from 'ramda';
 import { Tello } from './tello';
-import { spawn } from 'child_process';
+import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
+
 
 const leftpad = (value: any, char: string | number = 0, w = 2) => repeat(char, 10).join('').concat(value).slice(-w);
 
@@ -57,10 +59,12 @@ const createTimestamp = () => {
   //   console.log('h264encoder stderr data: ', data.toString());
   // });
 
+  // console.log(TelloPacket.toBuffer(drone.generator.logHeader(Buffer.of(0xff))));
+
   await drone.start();
 
-  // await drone.takeoff();
-  await drone.land();
+  await drone.takeoff();
+  // await drone.land();
 
   setTimeout(() => drone.land(), 7000);
 })();
