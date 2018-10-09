@@ -11,10 +11,10 @@ import { Tello } from './tello';
   const drone = new Tello();
   await drone.start();
 
-  // await drone.takeoff();
+  await drone.takeoff();
   // await drone.land();
 
-  // setTimeout(() => drone.land(), 7000);
+  setTimeout(() => drone.land(), 7000);
 })();
 
 // (async () => {

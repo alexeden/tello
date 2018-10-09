@@ -152,30 +152,28 @@ export class TelloPacketGenerator {
     });
   }
 
-  setStick(stickVals: Partial<Stick> = {}): Packet {
-    const leftX = (stickVals.leftX || 0 / 90) + 1024; // 660 to 1388
-    const leftY = (stickVals.leftY || 0 / 90) + 1024;
-    const rightX = (stickVals.rightX || 0 / 90) + 1024;
-    const rightY = (stickVals.rightY || 0 / 90) + 1024;
-    let axes = rightX & 0x07ff;
-    axes |= (rightY & 0x07ff) << 11;
-    axes |= (leftY & 0x07ff) << 22;
-    axes |= (leftX & 0x07ff) << 33;
-    axes |= (~~stickVals.fastMode!) << 44;
+  setStick({ leftX = 0, leftY = 0, rightX = 0, rightY = 0, speed = 0.1 }: Partial<Stick> = {}): Packet {
+    const axis1 = Math.trunc(660 * rightX + 1024.0); // RightX center=1024 left =364 right =-364
+    const axis2 = Math.trunc(660 * rightY + 1024.0); // RightY down =364 up =-364
+    const axis3 = Math.trunc(660 * leftY + 1024.0); // LeftY down =364 up =-364
+    const axis4 = Math.trunc(660 * leftX + 1024.0); // LeftX left =364 right =-364
+    const axis5 = Math.trunc(660 * speed + 1024.0); // Speed.
 
-    const stickBuf = Buffer.alloc(8);
-    stickBuf.writeUInt32BE(axes >> 8, 0); // write the high order bits (shifted over)
-    stickBuf.writeUInt32BE(axes & 0x00ff, 4); // write the low order bits
-    stickBuf.swap64();	// BE to LE
+    const packedAxis = (axis1 & 0x7FF) | ((axis2 & 0x7FF) << 11) | ((0x7FF & axis3) << 22) | ((0x7FF & axis4) << 33) | (axis5 << 44);
 
-    const payload = Buffer.alloc(11);
-    payload.write(stickBuf.slice(0, 6).toString(), 0);
+    const payload = Buffer.allocUnsafe(11);
+    payload[0] = 0xFF & packedAxis;
+    payload[1] = packedAxis >> 8 & 0xFF;
+    payload[2] = packedAxis >> 16 & 0xFF;
+    payload[3] = packedAxis >> 24 & 0xFF;
+    payload[4] = packedAxis >> 32 & 0xFF;
+    payload[5] = packedAxis >> 40 & 0xFF;
 
     const now = new Date();
     payload.writeUInt8(now.getHours(), 6);
     payload.writeUInt8(now.getMinutes(), 7);
     payload.writeUInt8(now.getSeconds(), 8);
-    payload.writeUInt16LE(now.getMilliseconds() * 1000 & 0xffff, 9);
+    payload.writeUInt16LE(now.getMilliseconds() & 0xffff, 9);
 
     return TelloPacket.of({
       command: Command.SetStick,
@@ -183,6 +181,37 @@ export class TelloPacketGenerator {
       payload,
     });
   }
+  // setStick(stickVals: Partial<Stick> = {}): Packet {
+  //   const leftX = (stickVals.leftX || 0 / 90) + 1024; // 660 to 1388
+  //   const leftY = (stickVals.leftY || 0 / 90) + 1024;
+  //   const rightX = (stickVals.rightX || 0 / 90) + 1024;
+  //   const rightY = (stickVals.rightY || 0 / 90) + 1024;
+  //   let axes = rightX & 0x07ff;
+  //   axes |= (rightY & 0x07ff) << 11;
+  //   axes |= (leftY & 0x07ff) << 22;
+  //   axes |= (leftX & 0x07ff) << 33;
+  //   axes |= (~~stickVals.fastMode!) << 44;
+
+  //   const stickBuf = Buffer.alloc(8);
+  //   stickBuf.writeUInt32BE(axes >> 8, 0); // write the high order bits (shifted over)
+  //   stickBuf.writeUInt32BE(axes & 0x00ff, 4); // write the low order bits
+  //   stickBuf.swap64();	// BE to LE
+
+  //   const payload = Buffer.alloc(11);
+  //   payload.write(stickBuf.slice(0, 6).toString(), 0);
+
+  //   const now = new Date();
+  //   payload.writeUInt8(now.getHours(), 6);
+  //   payload.writeUInt8(now.getMinutes(), 7);
+  //   payload.writeUInt8(now.getSeconds(), 8);
+  //   payload.writeUInt16LE(now.getMilliseconds() * 1000 & 0xffff, 9);
+
+  //   return TelloPacket.of({
+  //     command: Command.SetStick,
+  //     sequence: 0,
+  //     payload,
+  //   });
+  // }
 
   setVideoBitrate(rate: VideoBitrate = VideoBitrate.Auto): Packet {
     const payload = Buffer.of(rate);

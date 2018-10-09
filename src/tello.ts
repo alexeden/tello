@@ -167,12 +167,12 @@ export class Tello {
     await this.send(connectionRequest);
     console.log('connection request sent');
     await connected;
-    await this.send(this.generator.setDateTime());
+    // await this.send(this.generator.setDateTime());
     console.log('connected!');
 
-    this.sendOnInterval(2000, () => this.generator.setDateTime());
-    this.sendOnInterval(500, () => this.generator.setStick());
-    this.sendOnInterval(250, () => this.generator.queryVideoSpsPps());
+    // this.sendOnInterval(2000, () => this.generator.setDateTime());
+    this.sendOnInterval(20, () => this.generator.setStick());
+    this.sendOnInterval(100, () => this.generator.queryVideoSpsPps());
 
     // await this.send(this.generator.setCameraMode(CameraMode.Video));
     // await this.send(this.generator.setExposureValue(Exposure.Zero));
