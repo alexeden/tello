@@ -26,8 +26,11 @@ export class TelloPacketGenerator {
   }
 
   doLand(): Packet {
+    const payload = Buffer.of(0);
+
     return TelloPacket.of({
       command: Command.DoLand,
+      payload,
       sequence: this.sequence++,
     });
   }
