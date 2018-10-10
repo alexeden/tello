@@ -78,7 +78,10 @@ export class UdpSubject extends Subject<UdpMessage> {
       console.warn(`already started!`);
     }
     else {
-      this.socket.bind(this.client.port, this.client.address);
+      this.socket.bind(this.client.port, this.client.address, () => {
+        console.log('getRecvBufferSize ', this.socket.getRecvBufferSize());
+        console.log('getSendBufferSize ', this.socket.getSendBufferSize());
+      });
     }
     return this;
   }
@@ -100,20 +103,28 @@ export class UdpSubject extends Subject<UdpMessage> {
     return this.locked;
   }
 
+  sendInProgress = false;
   async next(sendable: UdpMessage): Promise<boolean> {
-    if (!this.target || this.locked) {
+    if (!this.target || this.locked || this.sendInProgress) {
       console.log('LOCKED, ignoring command');
       return false;
     }
 
+    // if (this.sendInProgress) {
+    //   console.error(sendable);
+    //   throw new Error(`Tried to send stuff before a previous message was sent!`);
+    // }
+
     return new Promise<boolean>((ok, err) => {
+      this.sendInProgress = true;
       this.socket.send(sendable, this.target!.port, this.target!.address, (error, bytes) => {
+        this.sendInProgress = false;
         if (error) {
           this.handleSocketError(error);
           ok(false);
         }
         else {
-          this.log('Tx', sendable);
+          // this.log('Tx', sendable);
           ok(true);
         }
       });

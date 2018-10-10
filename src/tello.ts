@@ -24,12 +24,12 @@ export class Tello {
   readonly stateStream: Observable<TelloState>;
 
   constructor() {
-    const timestamp = createTimestamp();
-    const commandLogPath = path.resolve(__dirname, 'logs', `command-logs_${timestamp}.txt`);
+    // const timestamp = createTimestamp();
+    // const commandLogPath = path.resolve(__dirname, 'logs', `command-logs_${timestamp}.txt`);
     this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer)
-      .attachLogger('commands', commandLogPath)
+      // .attachLogger('commands', commandLogPath)
       .start();
-    this.videoSocket = UdpSubject.create(TelloVideoClient).start();
+    this.videoSocket = UdpSubject.create(TelloVideoClient);
     this.generator = new TelloPacketGenerator();
     this.stateStream = this.stateManager.state;
 
@@ -110,13 +110,13 @@ export class Tello {
   private async sendAndLock(message: Packet) {
     const buffer = TelloPacket.toBuffer(message);
     const sent = await this.commandSocket.next(buffer);
-    console.log(`send and lock command sent? ${sent}`);
     this.commandSocket.lock();
+    console.log(`send and lock command sent? ${sent}`);
     await new Promise((ok, err) => {
       this.packetStream.pipe(
         filter(pkt => pkt.command === message.command)
       )
-      .subscribe(ok);
+      .subscribe(() => setTimeout(ok, 1000));
 
       setTimeout(() => err(`The drone never sent acknowledgement of the ${TelloPacket.getCommandLabel(message.command)} command.`), 5000);
     });
@@ -128,7 +128,7 @@ export class Tello {
     const buffer = message instanceof Buffer ? message : TelloPacket.toBuffer(message);
     const sent = await this.commandSocket.next(buffer);
     if (!sent) {
-      console.error(`Failed to send command with ID "${message instanceof Buffer ? message : message.command}"`);
+      console.error(`Failed to send command with ID "${message instanceof Buffer ? message : TelloPacket.getCommandLabel(message.command)}"`);
     }
     return sent;
   }
@@ -167,12 +167,13 @@ export class Tello {
     await this.send(connectionRequest);
     console.log('connection request sent');
     await connected;
-    // await this.send(this.generator.setDateTime());
+    await this.send(this.generator.setDateTime());
+    // this.videoSocket.start();
     console.log('connected!');
 
     // this.sendOnInterval(2000, () => this.generator.setDateTime());
     this.sendOnInterval(20, () => this.generator.setStick());
-    this.sendOnInterval(100, () => this.generator.queryVideoSpsPps());
+    // this.sendOnInterval(100, () => this.generator.queryVideoSpsPps());
 
     // await this.send(this.generator.setCameraMode(CameraMode.Video));
     // await this.send(this.generator.setExposureValue(Exposure.Zero));
@@ -195,10 +196,10 @@ export class Tello {
   }
 
   takeoff() {
-    return this.send(this.generator.doTakeoff());
+    return this.sendAndLock(this.generator.doTakeoff());
   }
 
   land() {
-    return this.send(this.generator.doLand());
+    return this.sendAndLock(this.generator.doLand());
   }
 }
