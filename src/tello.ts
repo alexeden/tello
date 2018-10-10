@@ -19,10 +19,10 @@ export class Tello {
   private readonly intervals: NodeJS.Timer[] = [];
   private readonly stopSignal = new Subject<any>();
   private readonly stateManager = new TelloStateManager();
+  private readonly rc: TelloRemoteControl;
 
   readonly generator: TelloPacketGenerator;
   readonly stateStream: Observable<TelloState>;
-  readonly rc: TelloRemoteControl;
 
   constructor() {
     this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer).start();
