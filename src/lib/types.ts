@@ -5,7 +5,7 @@
  * Maximum  0x7fff ( 32767)
  */
 export interface Stick {
-  speed: number;
+  fastMode: boolean;
   leftX: number;
   leftY: number;
   rightX: number;

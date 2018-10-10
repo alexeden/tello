@@ -39,7 +39,7 @@ export class TelloPacket {
   static toBuffer(p: Packet): Buffer {
     const { payload } = p;
     const n = payload.length + TelloPacket.MIN_PACKET_SIZE;
-    const buf = Buffer.allocUnsafe(n);
+    const buf = Buffer.alloc(n);
     buf.writeUInt8(TelloPacket.HEADER, Offset.Header);
     buf.writeUInt16LE(n << 3, Offset.Size);
     buf.writeUInt8(calcCRC8(buf.slice(0, 3)), Offset.Crc8);
