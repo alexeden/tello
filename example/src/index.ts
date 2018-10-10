@@ -1,4 +1,4 @@
-import { videoWsServer, stateWsServer } from './server';
+import { rcWsServer, stateWsServer, videoWsServer } from './server';
 import { sample, startWith, switchMapTo, map } from 'rxjs/operators';
 import { fromEvent, merge } from 'rxjs';
 import { SocketUtils, VideoUtils } from './utils';
@@ -50,9 +50,12 @@ const isCommand = (value: any): value is Command => typeof Command[value] === 's
     });
   });
 
-  merge(drone.stateStream, fromEvent(stateWsServer, 'connection').pipe(switchMapTo(drone.stateStream)))
-    .pipe(map(state => JSON.stringify(state)))
-    .subscribe(broadcastState);
+  merge(
+    drone.stateStream,
+    fromEvent(stateWsServer, 'connection').pipe(switchMapTo(drone.stateStream))
+  )
+  .pipe(map(state => JSON.stringify(state)))
+  .subscribe(broadcastState);
 
   drone.start();
 })();

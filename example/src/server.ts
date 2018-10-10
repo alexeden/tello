@@ -36,6 +36,7 @@ app.use(express.static(path.resolve(__dirname, 'client'), {
 
 export const httpsServer = https.createServer(httpsServerOptions, app).listen(httpsPort);
 export const videoWsServer = new ws.Server({ noServer: true });
+export const rcWsServer = new ws.Server({ noServer: true });
 export const stateWsServer = new ws.Server({ noServer: true });
 
 httpsServer.on('upgrade', (request: http.IncomingMessage, socket: net.Socket, head: Buffer) => {
@@ -43,8 +44,9 @@ httpsServer.on('upgrade', (request: http.IncomingMessage, socket: net.Socket, he
   let wssServer: ws.Server;
 
   switch (pathname) {
-    case '/video': wssServer = videoWsServer; break;
-    case '/state': wssServer = stateWsServer; break;
+    case '/video':  wssServer = videoWsServer; break;
+    case '/rc':     wssServer = rcWsServer; break;
+    case '/state':  wssServer = stateWsServer; break;
     default: socket.destroy(); return;
   }
 

@@ -21,8 +21,14 @@ export class TelloRemoteControl implements Stick {
     return this;
   }
 
-  set(stick: Partial<Stick>) {
-    Object.assign(this, stick);
+  set({
+    fastMode = this.fastMode,
+    leftX = this.leftX,
+    leftY = this.leftY,
+    rightX = this.rightX,
+    rightY = this.rightY,
+  }: Partial<Stick>) {
+    Object.assign(this, { fastMode, leftX, leftY, rightX, rightY });
     return this;
   }
 
