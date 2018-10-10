@@ -152,6 +152,8 @@ export class TelloStateManager {
         return true;
 
       case Command.LogHeader:
+      case Command.DoTakeoff:
+      case Command.DoLand:
         return true;
 
       default:

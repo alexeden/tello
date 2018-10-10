@@ -1,7 +1,6 @@
-import * as path from 'path';
 import { Observable, Subject } from 'rxjs';
-import { map, filter, skipWhile, takeUntil, sampleTime } from 'rxjs/operators';
-import { UdpSubject, pad, tag, createTimestamp } from './utils';
+import { map, filter, skipWhile, takeUntil } from 'rxjs/operators';
+import { UdpSubject } from './utils';
 import {
   TelloCommandClient,
   TelloCommandServer,
@@ -24,11 +23,7 @@ export class Tello {
   readonly stateStream: Observable<TelloState>;
 
   constructor() {
-    // const timestamp = createTimestamp();
-    // const commandLogPath = path.resolve(__dirname, 'logs', `command-logs_${timestamp}.txt`);
-    this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer)
-      // .attachLogger('commands', commandLogPath)
-      .start();
+    this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer).start();
     this.videoSocket = UdpSubject.create(TelloVideoClient);
     this.generator = new TelloPacketGenerator();
     this.stateStream = this.stateManager.state;
@@ -36,38 +31,22 @@ export class Tello {
     this.packetStream.subscribe(async packet => {
       switch (packet.command) {
         case Command.LogHeader:
+          /**
+           * TOOD:
+           * Why
+           * Why
+           * WHY won't this get the damn thing to start sending log data?
+           */
           const ackPacket = this.generator.logHeader(packet.payload.slice(0, 2));
           await this.send(ackPacket);
           break;
-        case Command.DoTakeoff:
-          console.log('takeoff command got this payload: ', packet.payload);
-          break;
-        case Command.DoLand:
-          console.log('takeoff command got this payload: ', packet.payload);
-          break;
       }
     });
-
-    // const logCommand = pad(20, 'left', ' ');
-    // const logLength = pad(5, 'right', ' ');
-    // this.commandSocket.asObservable().pipe(
-    //   filter(TelloPacket.bufferIsPacket)
-    // )
-    // .subscribe(buffer => {
-    //   const parsed = TelloPacket.fromBuffer(buffer);
-    //   const label = TelloPacket.getCommandLabel(parsed.command);
-    //   console.log(`${logCommand(label)}${logLength(parsed.command)}${logLength(buffer.length)}${logLength(parsed.payload.length)}`);
-    // });
 
     // Route incoming packets to the state manager
     this.packetStream.subscribe(packet => {
       this.stateManager.parseAndUpdate(packet);
     });
-
-    // this.stateManager.state.pipe(
-    //   sampleTime(1000),
-    //   tag('state', true)
-    // ).subscribe();
   }
 
   // Raw command stream
@@ -107,23 +86,6 @@ export class Tello {
     );
   }
 
-  private async sendAndLock(message: Packet) {
-    const buffer = TelloPacket.toBuffer(message);
-    const sent = await this.commandSocket.next(buffer);
-    this.commandSocket.lock();
-    console.log(`send and lock command sent? ${sent}`);
-    await new Promise((ok, err) => {
-      this.packetStream.pipe(
-        filter(pkt => pkt.command === message.command)
-      )
-      .subscribe(() => setTimeout(ok, 1000));
-
-      setTimeout(() => err(`The drone never sent acknowledgement of the ${TelloPacket.getCommandLabel(message.command)} command.`), 5000);
-    });
-    console.log('got ack, unlocking socket');
-    this.commandSocket.unlock();
-  }
-
   private async send(message: Packet | Buffer) {
     const buffer = message instanceof Buffer ? message : TelloPacket.toBuffer(message);
     const sent = await this.commandSocket.next(buffer);
@@ -154,7 +116,6 @@ export class Tello {
 
   async start() {
     this.clearIntervalRequests();
-
     const connectionRequest = this.generator.createConnectionRequest(TelloVideoClient.port);
     const connected = new Promise((ok, err) => {
       this.messageStream.subscribe(msg =>
@@ -168,25 +129,24 @@ export class Tello {
     console.log('connection request sent');
     await connected;
     await this.send(this.generator.setDateTime());
-    // this.videoSocket.start();
+    this.videoSocket.start();
     console.log('connected!');
 
-    // this.sendOnInterval(2000, () => this.generator.setDateTime());
     this.sendOnInterval(20, () => this.generator.setStick());
-    // this.sendOnInterval(100, () => this.generator.queryVideoSpsPps());
+    this.sendOnInterval(100, () => this.generator.queryVideoSpsPps());
 
-    // await this.send(this.generator.setCameraMode(CameraMode.Video));
-    // await this.send(this.generator.setExposureValue(Exposure.Zero));
-    // await this.send(this.generator.setVideoBitrate(VideoBitrate.Auto));
-    // await this.send(this.generator.queryAttitude());      /* 4185 */
-    // await this.send(this.generator.queryHeightLimit());   /* 4182 */
-    // await this.send(this.generator.queryJpegQuality());   /* 55 */
-    // await this.send(this.generator.queryLowBattThresh()); /* 4183 */
-    // await this.send(this.generator.querySsid());          /* 17 */
-    // await this.send(this.generator.querySsidPass());      /* 19 */
-    // await this.send(this.generator.queryVersion());       /* 69 */
-    // await this.send(this.generator.queryVideoBitrate());  /* 40 */
-    // await this.send(this.generator.queryWifiRegion());    /* 21 */
+    await this.send(this.generator.setCameraMode(CameraMode.Video));
+    await this.send(this.generator.setExposureValue(Exposure.Zero));
+    await this.send(this.generator.setVideoBitrate(VideoBitrate.Auto));
+    await this.send(this.generator.queryAttitude());      /* 4185 */
+    await this.send(this.generator.queryHeightLimit());   /* 4182 */
+    await this.send(this.generator.queryJpegQuality());   /* 55 */
+    await this.send(this.generator.queryLowBattThresh()); /* 4183 */
+    await this.send(this.generator.querySsid());          /* 17 */
+    await this.send(this.generator.querySsidPass());      /* 19 */
+    await this.send(this.generator.queryVersion());       /* 69 */
+    await this.send(this.generator.queryVideoBitrate());  /* 40 */
+    await this.send(this.generator.queryWifiRegion());    /* 21 */
   }
 
   stop() {
@@ -196,10 +156,10 @@ export class Tello {
   }
 
   takeoff() {
-    return this.sendAndLock(this.generator.doTakeoff());
+    return this.send(this.generator.doTakeoff());
   }
 
   land() {
-    return this.sendAndLock(this.generator.doLand());
+    return this.send(this.generator.doLand());
   }
 }

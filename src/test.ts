@@ -1,36 +1,12 @@
-import {
-  map,
-  take,
-  tap,
-  filter,
-} from 'rxjs/operators';
 import { Tello } from './tello';
-
 
 (async () => {
   const drone = new Tello();
   await drone.start();
 
   await drone.takeoff();
-  // await drone.land();
-
-  setTimeout(() => drone.land(), 7000);
+  setTimeout(() => drone.land(), 6000);
 })();
-
-// (async () => {
-//   const drone = new Tello();
-
-//   const mediaPath = path.resolve(__dirname, '..', 'media');
-//   const videoPath = path.join(mediaPath, `video.${createTimestamp()}.h264`);
-//   const videoRecording = fs.createWriteStream(videoPath);
-//   fs.symlinkSync(videoPath, path.join(mediaPath, 'latest'));
-
-//   // drone.videoStream.subscribe(videoRecording.write.bind(videoRecording));
-
-//   drone.flightStatus.pipe(tag('flight status', true)).subscribe();
-
-//   drone.start();
-// })();
 
 // (async () => {
 //   const drone = new Tello();

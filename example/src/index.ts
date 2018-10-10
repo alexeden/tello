@@ -35,7 +35,6 @@ const isCommand = (value: any): value is Command => typeof Command[value] === 's
         break;
       case Command.DoTakeoff:
         drone.takeoff();
-        console.log('sent drone takeoff command');
         break;
       case Command.DoLand:
         drone.land();
@@ -54,7 +53,6 @@ const isCommand = (value: any): value is Command => typeof Command[value] === 's
   merge(drone.stateStream, fromEvent(stateWsServer, 'connection').pipe(switchMapTo(drone.stateStream)))
     .pipe(map(state => JSON.stringify(state)))
     .subscribe(broadcastState);
-
 
   drone.start();
 })();
