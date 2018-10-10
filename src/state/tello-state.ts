@@ -151,6 +151,9 @@ export class TelloStateManager {
         }));
         return true;
 
+      case Command.LogHeader:
+        return true;
+
       default:
         const label = TelloPacket.getCommandLabel(command);
         if (!label) {
