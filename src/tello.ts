@@ -7,9 +7,10 @@ import {
   TelloVideoClient,
 } from './tello.constants';
 import { TelloPacketGenerator, TelloPacket, Packet, Command } from './protocol';
+import { TelloRemoteControl } from './tello.remote-control';
 import { TelloStateManager, TelloState } from './state';
 import { TelloVideoUtils } from './video';
-import { CameraMode, Exposure, VideoBitrate } from './lib';
+import { CameraMode, Exposure, VideoBitrate, Stick } from './lib';
 
 
 export class Tello {
@@ -21,11 +22,14 @@ export class Tello {
 
   readonly generator: TelloPacketGenerator;
   readonly stateStream: Observable<TelloState>;
+  readonly rc: TelloRemoteControl;
 
   constructor() {
     this.commandSocket = UdpSubject.create(TelloCommandClient, TelloCommandServer).start();
     this.videoSocket = UdpSubject.create(TelloVideoClient);
     this.generator = new TelloPacketGenerator();
+    this.rc = new TelloRemoteControl();
+
     this.stateStream = this.stateManager.state;
 
     this.packetStream.subscribe(async packet => {
@@ -132,7 +136,7 @@ export class Tello {
     this.videoSocket.start();
     console.log('connected!');
 
-    this.sendOnInterval(20, () => this.generator.setStick());
+    this.sendOnInterval(20, () => this.generator.setStick(this.rc));
     this.sendOnInterval(100, () => this.generator.queryVideoSpsPps());
 
     await this.send(this.generator.setCameraMode(CameraMode.Video));
@@ -161,5 +165,13 @@ export class Tello {
 
   land() {
     return this.send(this.generator.doLand());
+  }
+
+  hover() {
+    this.rc.reset();
+  }
+
+  updateRemoteControl(values: Partial<Stick>) {
+    this.rc.set(values);
   }
 }
