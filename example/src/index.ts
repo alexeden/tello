@@ -50,6 +50,13 @@ const isCommand = (value: any): value is Command => typeof Command[value] === 's
     });
   });
 
+  rcWsServer.on('connection', socket => {
+    socket.on('message', data => {
+      const msg = typeof data === 'string' ? JSON.parse(data) : {};
+      drone.updateRemoteControl(msg);
+    });
+  });
+
   merge(
     drone.stateStream,
     fromEvent(stateWsServer, 'connection').pipe(switchMapTo(drone.stateStream))
