@@ -26,6 +26,7 @@ app.use(webpackDevMiddleware(compiler, {
   publicPath: config.output!.publicPath!,
 }));
 
+app.use('/assets', express.static(path.resolve(__dirname, 'assets')));
 app.use(express.static(path.resolve(__dirname, 'client'), {
   setHeaders(res, filePath) {
     if (filePath.endsWith('.wasm')) {
