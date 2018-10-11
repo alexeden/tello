@@ -1,5 +1,17 @@
+body {
+  background-color: #835eff;
+  color: white;
+  padding: 1rem;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
+}
+
 canvas {
-  width: 100vw;
+  width: 100%;
 }
 
 pre {

@@ -5,6 +5,7 @@ import { Subscription, pipe, merge, fromEvent } from 'rxjs';
 import { Player } from './player';
 import * as template from './app.html';
 import { filter, scan, map } from 'rxjs/operators';
+import { RemoteControl } from './remote-control';
 
 interface Status {
   flying: boolean;
@@ -42,6 +43,9 @@ Vue.use(VueRx);
 new Vue({
   el: '#app',
   template,
+  components: {
+    RemoteControl,
+  },
   data() {
     const keycodes = Object.values(Controls);
     const keymapInit = keycodes.reduce((keymap, k) => ({ ...keymap, [k]: 0 }), {}) as ControlKeyMap;
