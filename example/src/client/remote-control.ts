@@ -6,10 +6,10 @@ import * as template from './remote-control.html';
 
 
 enum Controls {
-  Forward = 'KeyW',
-  Left = 'KeyA',
-  Backward = 'KeyS',
-  Right = 'KeyD',
+  Forward = 'KeyE',
+  Left = 'KeyS',
+  Backward = 'KeyD',
+  Right = 'KeyF',
   RotateCCW = 'KeyJ',
   RotateCW = 'KeyL',
   Up = 'KeyI',
@@ -31,6 +31,12 @@ export interface RemoteControl {
 export const RemoteControlComponent = Vue.extend({
   template,
   name: 'remote-control',
+  props: {
+    flying: {
+      type: Boolean,
+      required: true,
+    },
+  },
   data() {
     const keycodes = Object.values(Controls);
     const keymapInit = keycodes.reduce((keymap, k) => ({ ...keymap, [k]: 0 }), {}) as ControlKeyMap;
@@ -55,6 +61,7 @@ export const RemoteControlComponent = Vue.extend({
     },
   },
   mounted() {
+    (window as any).rc = this;
     this.keymap.pipe(
       map<ControlKeyMap, RemoteControl>(keymap => ({
         fastMode: false,

@@ -60,6 +60,7 @@ new Vue({
   created() {
     (window as any).app = this;
     this.connectState();
+    this.connectRemoteControl();
     // this.connectVideo();
 
   },
@@ -91,11 +92,6 @@ new Vue({
         ...(this.state && this.state.status || {}),
       };
     },
-  },
-  subscriptions() {
-
-    return {
-    };
   },
   methods: {
     handleRemoteControlCommand(cmd: string) {

@@ -1,5 +1,5 @@
 <div class="column gap-20">
-  <remote-control @change="sendRc" @command="handleRemoteControlCommand"/>
+  <remote-control @change="sendRc" @command="handleRemoteControlCommand" :flying="status.flying"/>
   <div class="row gap-10">
     <div class="column gap-20 p-10">
       <div class="column gap-10">
