@@ -14,6 +14,92 @@ canvas {
   width: 100%;
 }
 
+svg {
+  fill: white;
+}
+
+.rc-indicator {
+  display: block;
+  font-size: 4rem;
+  text-align: center;
+  font-family: monospace;
+  font-weight: bold;
+  opacity: 0.1;
+}
+
+.rc-indicator--activated {
+  opacity: 1;
+}
+
+.rotate {
+  transform: rotate(180deg);
+}
+
+.flip-h {
+  transform: rotateY(180deg) rotateZ(180deg);
+}
+
+.op-10 {
+  opacity: 0.1;
+}
+.op-100 {
+  opacity: 1;
+}
+
+button.command {
+  /* background-image: url("/assets/drone-land.svg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-origin: center center; */
+  height: 60px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 1rem;
+  box-sizing: border-box;
+  transition: opacity .2s ease-in, background-color 1s ease-in-out;
+  opacity: 0.7;
+  outline: none !important;
+}
+button.command:hover {
+  opacity: 1;
+}
+button.command:active {
+  animation-name: pop;
+  animation-duration: 1s;
+  animation-timing-function: ease-in-out;
+  animation-delay: 0s;
+  animation-iteration-count: 1;
+}
+
+@keyframes pop {
+  from {
+    background-color: #ffffffaa;
+  }
+  to {
+    background-color: transparent;
+  }
+}
+
+button.command svg {
+  /* height: max-content; */
+  height: 100%;
+  margin-right: 12px;
+  transition: transform .2s ease-in;
+  transform-origin: right;
+}
+button.command:hover svg {
+  transform: scale(1.6);
+  /* // translateX(-10px); */
+}
+
+button.command .label {
+  font-size: 1rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: white;
+}
+
 pre {
   width: 100%;
   overflow: scroll;

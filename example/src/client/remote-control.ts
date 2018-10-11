@@ -11,7 +11,9 @@ enum Controls {
   Backward = 'KeyS',
   Right = 'KeyD',
   RotateCCW = 'KeyJ',
-  RotateCW = 'KeyK',
+  RotateCW = 'KeyL',
+  Up = 'KeyI',
+  Down = 'KeyK',
 }
 
 type ControlKeyMap = {
@@ -34,6 +36,13 @@ export const RemoteControlComponent = Vue.extend({
     const keymapInit = keycodes.reduce((keymap, k) => ({ ...keymap, [k]: 0 }), {}) as ControlKeyMap;
 
     return {
+      keymapValues: {
+        fastMode: false,
+        leftX: 0,
+        leftY: 0,
+        rightX: 0,
+        rightY: 0,
+      },
       keymap: merge(fromEvent<KeyboardEvent>(document, 'keydown'), fromEvent<KeyboardEvent>(document, 'keyup')).pipe(
         filter(e => !e.repeat && keycodes.includes(e.code)),
         scan<KeyboardEvent, ControlKeyMap>((keymap, e) => ({ ...keymap, [e.code]: ~~(e.type === 'keydown') }), keymapInit)
@@ -45,11 +54,14 @@ export const RemoteControlComponent = Vue.extend({
       map<ControlKeyMap, RemoteControl>(keymap => ({
         fastMode: false,
         leftX: (-1 * keymap[Controls.RotateCCW]) + keymap[Controls.RotateCW],
-        leftY: 0,
+        leftY: (-1 * keymap[Controls.Down]) + keymap[Controls.Up],
         rightX: (-1 * keymap[Controls.Left]) + keymap[Controls.Right],
         rightY: (-1 * keymap[Controls.Backward]) + keymap[Controls.Forward],
       }))
     )
-    .subscribe(rc => this.$emit('change', rc));
+    .subscribe(rc => {
+      this.$emit('change', rc);
+      this.keymapValues = rc;
+    });
   },
 });
