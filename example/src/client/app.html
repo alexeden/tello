@@ -1,24 +1,9 @@
 <div class="column gap-20">
-  <remote-control @change="handleRemoteControlChange" @command="handleRemoteControlCommand"/>
+  <remote-control @change="sendRc" @command="handleRemoteControlCommand"/>
   <div class="row gap-10">
     <div class="column gap-20 p-10">
       <div class="column gap-10">
         <h2>Sockets</h2>
-        <div class="row align-center gap-10">
-          <div class="row justify-space-between gap-10">
-            <p>Video Socket</p>
-            <span class="text-green" v-if="videoConnected">Connected</span>
-            <span class="text-red" v-else>Disconnected</span>
-          </div>
-          <div class="row grow justify-end">
-            <button
-              v-if="!videoConnected" @click="connectVideo"
-              class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
-              Connect
-            </button>
-          </div>
-        </div>
-
         <div class="row align-center gap-10">
           <div class="row justify-space-between gap-10">
             <p>State Socket</p>
@@ -28,6 +13,35 @@
           <div class="row grow justify-end">
             <button
               v-if="!stateConnected" @click="connectState"
+              class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
+              Connect
+            </button>
+          </div>
+        </div>
+        <div class="row align-center gap-10">
+          <div class="row justify-space-between gap-10">
+            <p>Remote Controller Socket</p>
+            <span class="text-green" v-if="rcConnected">Connected</span>
+            <span class="text-red" v-else>Disconnected</span>
+          </div>
+          <div class="row grow justify-end">
+            <button
+              v-if="!rcConnected" @click="connectRemoteControl"
+              class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
+              Connect
+            </button>
+          </div>
+        </div>
+
+        <div class="row align-center gap-10">
+          <div class="row justify-space-between gap-10">
+            <p>Video Socket</p>
+            <span class="text-green" v-if="videoConnected">Connected</span>
+            <span class="text-red" v-else>Disconnected</span>
+          </div>
+          <div class="row grow justify-end">
+            <button
+              v-if="!videoConnected" @click="connectVideo"
               class="border bg-white border-purple hover:bg-purple text-purple hover:text-white font-bold py-2 px-4 rounded">
               Connect
             </button>

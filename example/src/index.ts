@@ -53,6 +53,7 @@ const isCommand = (value: any): value is Command => typeof Command[value] === 's
   rcWsServer.on('connection', socket => {
     socket.on('message', data => {
       const msg = typeof data === 'string' ? JSON.parse(data) : {};
+      console.log('stick update sent: ', msg);
       drone.updateRemoteControl(msg);
     });
   });

@@ -41,8 +41,10 @@ new Vue({
     return {
       player: new Player({ size: { width: 1280, height: 720 }}),
       state: {} as any,
+      rcSocket: null as (null | WebSocket),
       stateSocket: null as (null | WebSocket),
       videoSocket: null as (null | WebSocket),
+      rcConnected: false,
       stateConnected: false,
       videoConnected: false,
       remoteControl: {
@@ -64,17 +66,6 @@ new Vue({
   mounted() {
     const videoWrapper = this.$refs.videoWrapper as HTMLDivElement;
     videoWrapper.appendChild(this.player.canvas);
-
-    // this.keymap.pipe(
-    //   map<ControlKeyMap, RemoteControl>(keymap => ({
-    //     fastMode: false,
-    //     leftX: (-1 * keymap[Controls.RotateCCW]) + keymap[Controls.RotateCW],
-    //     leftY: 0,
-    //     rightX: (-1 * keymap[Controls.Left]) + keymap[Controls.Right],
-    //     rightY: (-1 * keymap[Controls.Backward]) + keymap[Controls.Forward],
-    //   }))
-    // )
-    // .subscribe(console.log);
   },
   beforeDestroy() {
     let sub;
@@ -111,28 +102,30 @@ new Vue({
       console.log(cmd);
       switch (cmd) {
         case 'connect':
-          this.send(0x0001);
+          this.sendCommand(0x0001);
           break;
         case 'takeoff':
-          this.send(0x0054);
+          this.sendCommand(0x0054);
           break;
-          case 'land':
-          this.send(0x0055);
+        case 'land':
+          this.sendCommand(0x0055);
           break;
         default:
           throw new Error(`Unknown command sent by the RC component: ${cmd}`);
       }
     },
-    handleRemoteControlChange(rc: RemoteControl) {
-      console.log(rc);
-    },
-    send(command: number, data: any = null) {
+    sendCommand(command: number, data: any = null) {
       if (!this.stateConnected) return;
 
       this.stateSocket!.send(JSON.stringify({
         command,
         data,
       }));
+    },
+    sendRc(rc: RemoteControl) {
+      if (!this.rcConnected) return;
+
+      this.rcSocket!.send(JSON.stringify(rc));
     },
     connectState() {
       const stateSocket = (!this.stateSocket || this.stateSocket!.readyState !== WebSocket.OPEN && this.stateSocket.readyState !== WebSocket.CONNECTING)
@@ -148,6 +141,21 @@ new Vue({
       stateSocket.onclose = () => this.stateConnected = false;
       stateSocket.onmessage = e => this.state = JSON.parse(e.data);
       this.stateSocket = stateSocket;
+    },
+    connectRemoteControl() {
+      const rcSocket = (!this.rcSocket || this.rcSocket!.readyState !== WebSocket.OPEN && this.rcSocket.readyState !== WebSocket.CONNECTING)
+        ? new WebSocket(`wss://${window.location.host}/rc`)
+        : this.rcSocket;
+      const { readyState } = rcSocket;
+      this.rcConnected = readyState === WebSocket.OPEN;
+      rcSocket.onopen = () => this.rcConnected = true;
+      rcSocket.onerror = errorEvent => {
+        console.error('rc socket error', errorEvent);
+        this.rcConnected = false;
+      };
+      rcSocket.onclose = () => this.rcConnected = false;
+      // rcSocket.onmessage = e => this.state = JSON.parse(e.data);
+      this.rcSocket = rcSocket;
     },
     connectVideo() {
       const videoSocket = (!this.videoSocket || this.videoSocket!.readyState !== WebSocket.OPEN && this.videoSocket.readyState !== WebSocket.CONNECTING)
