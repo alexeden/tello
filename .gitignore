@@ -63,3 +63,4 @@ typings/
 media
 dist
 .vscode
+*.gvdesign
