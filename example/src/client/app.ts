@@ -107,6 +107,22 @@ new Vue({
     };
   },
   methods: {
+    handleRemoteControlCommand(cmd: string) {
+      console.log(cmd);
+      switch (cmd) {
+        case 'connect':
+          this.send(0x0001);
+          break;
+        case 'takeoff':
+          this.send(0x0054);
+          break;
+          case 'land':
+          this.send(0x0055);
+          break;
+        default:
+          throw new Error(`Unknown command sent by the RC component: ${cmd}`);
+      }
+    },
     handleRemoteControlChange(rc: RemoteControl) {
       console.log(rc);
     },

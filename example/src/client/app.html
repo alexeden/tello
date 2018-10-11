@@ -1,10 +1,7 @@
 <div class="column gap-20">
-  <h1>Hello, Tello</h1>
-  <remote-control @change="handleRemoteControlChange"/>
+  <remote-control @change="handleRemoteControlChange" @command="handleRemoteControlCommand"/>
   <div class="row gap-10">
     <div class="column gap-20 p-10">
-      <div class="column gap-10">
-      </div>
       <div class="column gap-10">
         <h2>Sockets</h2>
         <div class="row align-center gap-10">
@@ -43,26 +40,6 @@
           <p class="grow">Battery</p>
           <code>{{ battery.percentage || 0 }}%</code>
           <code>{{ battery.batteryLeft || 0 }}</code>
-        </div>
-      </div>
-      <div v-if="stateConnected" class="column gap-10">
-        <h2>Commands</h2>
-        <div class="row gap-10">
-          <button
-            @click="send(0x0001)"
-            class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
-            Send Connection Request
-          </button>
-          <button
-            @click="send(0x0054)"
-            class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
-            Takeoff
-          </button>
-          <button
-            @click="send(0x0055)"
-            class="bg-green hover:bg-green-dark text-white font-bold py-2 px-4 rounded">
-            Land
-          </button>
         </div>
       </div>
     </div>

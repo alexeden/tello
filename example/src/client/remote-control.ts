@@ -49,6 +49,11 @@ export const RemoteControlComponent = Vue.extend({
       ),
     };
   },
+  methods: {
+    handleCommand(cmd: string) {
+      this.$emit('command', cmd);
+    },
+  },
   mounted() {
     this.keymap.pipe(
       map<ControlKeyMap, RemoteControl>(keymap => ({

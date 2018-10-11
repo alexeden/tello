@@ -1,7 +1,6 @@
 <div class="row gap-40 justify-center">
-  <div class="col gap-10">
-
-    <button class="command">
+  <div class="column gap-5 grow-1 justify-center">
+    <button class="command" @click="handleCommand('connect')">
       <svg
         version="1.1"
         id="antenna"
@@ -37,7 +36,7 @@
     </button>
 
 
-    <button class="command">
+    <button class="command" @click="handleCommand('land')">
         <svg
         version="1.1"
         xmlns="http://www.w3.org/2000/svg"
@@ -73,7 +72,7 @@
       <span class="label">Land</span>
     </button>
 
-    <button class="command">
+    <button class="command" @click="handleCommand('takeoff')">
       <svg version="1.1"
         xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
         viewBox="0 0 511 511"
@@ -110,7 +109,7 @@
   </div>
   <!-- Front view -->
   <div class="row justify-center align-center gap-10">
-    <div class="col gap-10">
+    <div class="column gap-10">
       <span class="rc-indicator" :class="keymapValues.leftY > 0 && 'rc-indicator--activated'">&triangle;</span>
       <svg
         class="pos-relative"
@@ -142,7 +141,7 @@
   <div class="row justify-center align-center gap-10">
     <span class="rc-indicator" :class="keymapValues.rightX < 0 && 'rc-indicator--activated'">&leftarrow;</span>
     <span class="rc-indicator rotate" :class="keymapValues.leftX > 0 && 'rc-indicator--activated'">&cudarrl;</span>
-    <div class="col gap-10">
+    <div class="column gap-10">
       <span class="rc-indicator" :class="keymapValues.rightY > 0 && 'rc-indicator--activated'">&uparrow;</span>
       <svg
         id="drone"
@@ -168,5 +167,5 @@
     <span class="rc-indicator" :class="keymapValues.rightX > 0 && 'rc-indicator--activated'">&rightarrow;</span>
   </div>
 
-
+  <div class="col gap-10 grow-1"></div>
 </div>

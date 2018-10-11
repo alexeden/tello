@@ -47,10 +47,6 @@ svg {
 }
 
 button.command {
-  /* background-image: url("/assets/drone-land.svg");
-  background-position: center;
-  background-repeat: no-repeat;
-  background-origin: center center; */
   height: 60px;
   display: flex;
   flex-direction: row;
