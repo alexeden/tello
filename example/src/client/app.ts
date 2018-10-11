@@ -5,7 +5,7 @@ import { Subscription, pipe, merge, fromEvent } from 'rxjs';
 import { Player } from './player';
 import * as template from './app.html';
 import { filter, scan, map } from 'rxjs/operators';
-import { RemoteControl } from './remote-control';
+import { RemoteControl, RemoteControlComponent } from './remote-control';
 
 interface Status {
   flying: boolean;
@@ -28,15 +28,6 @@ type ControlKeyMap = {
   [P in Controls]: 0 | 1
 };
 
-interface RemoteControl {
-  fastMode: boolean;
-  leftX: number;
-  leftY: number;
-  rightX: number;
-  rightY: number;
-}
-
-
 
 Vue.use(VueRx);
 
@@ -44,19 +35,12 @@ new Vue({
   el: '#app',
   template,
   components: {
-    RemoteControl,
+    remoteControl: RemoteControlComponent,
   },
   data() {
-    const keycodes = Object.values(Controls);
-    const keymapInit = keycodes.reduce((keymap, k) => ({ ...keymap, [k]: 0 }), {}) as ControlKeyMap;
-
     return {
       player: new Player({ size: { width: 1280, height: 720 }}),
       state: {} as any,
-      keymap: merge(fromEvent<KeyboardEvent>(document, 'keydown'), fromEvent<KeyboardEvent>(document, 'keyup')).pipe(
-        filter(e => !e.repeat && keycodes.includes(e.code)),
-        scan<KeyboardEvent, ControlKeyMap>((keymap, e) => ({ ...keymap, [e.code]: ~~(e.type === 'keydown') }), keymapInit)
-      ),
       stateSocket: null as (null | WebSocket),
       videoSocket: null as (null | WebSocket),
       stateConnected: false,
@@ -81,16 +65,16 @@ new Vue({
     const videoWrapper = this.$refs.videoWrapper as HTMLDivElement;
     videoWrapper.appendChild(this.player.canvas);
 
-    this.keymap.pipe(
-      map<ControlKeyMap, RemoteControl>(keymap => ({
-        fastMode: false,
-        leftX: (-1 * keymap[Controls.RotateCCW]) + keymap[Controls.RotateCW],
-        leftY: 0,
-        rightX: (-1 * keymap[Controls.Left]) + keymap[Controls.Right],
-        rightY: (-1 * keymap[Controls.Backward]) + keymap[Controls.Forward],
-      }))
-    )
-    .subscribe(console.log);
+    // this.keymap.pipe(
+    //   map<ControlKeyMap, RemoteControl>(keymap => ({
+    //     fastMode: false,
+    //     leftX: (-1 * keymap[Controls.RotateCCW]) + keymap[Controls.RotateCW],
+    //     leftY: 0,
+    //     rightX: (-1 * keymap[Controls.Left]) + keymap[Controls.Right],
+    //     rightY: (-1 * keymap[Controls.Backward]) + keymap[Controls.Forward],
+    //   }))
+    // )
+    // .subscribe(console.log);
   },
   beforeDestroy() {
     let sub;
@@ -123,6 +107,9 @@ new Vue({
     };
   },
   methods: {
+    handleRemoteControlChange(rc: RemoteControl) {
+      console.log(rc);
+    },
     send(command: number, data: any = null) {
       if (!this.stateConnected) return;
 
