@@ -39,6 +39,7 @@ export class Player {
     this.decoder.start();
   }
 
+  /* This gets called by the decoder, which just forwards it a message from the WASM environment */
   decodedImageListener(buffer: Uint8Array, width: number, height: number, info: DecodedBufferInfo) {
     const frame: Frame = { buffer, height, width, info };
     (window as any).frame = frame;
@@ -49,7 +50,6 @@ export class Player {
     if (typeof data === 'string') {
       data = Player.toUint8Array(data);
     }
-
     this.decoder.decode(new Uint8Array(data.buffer, 0, data.length), info);
   }
 

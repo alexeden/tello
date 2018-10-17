@@ -39,7 +39,7 @@ new Vue({
   },
   data() {
     return {
-      player: new Player({ size: { width: 1280, height: 720 }}),
+      player: new Player({ size: { width: 960, height: 720 }}),
       state: {} as any,
       rcSocket: null as (null | WebSocket),
       stateSocket: null as (null | WebSocket),
@@ -150,7 +150,6 @@ new Vue({
         this.rcConnected = false;
       };
       rcSocket.onclose = () => this.rcConnected = false;
-      // rcSocket.onmessage = e => this.state = JSON.parse(e.data);
       this.rcSocket = rcSocket;
     },
     connectVideo() {
