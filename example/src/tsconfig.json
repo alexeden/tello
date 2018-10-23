@@ -9,6 +9,8 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": false,
+    "jsx": "react",
+    "jsxFactory": "h",
     "lib": [
       "dom",
       "esnext",
