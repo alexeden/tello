@@ -18,6 +18,10 @@ svg {
   fill: white;
 }
 
+.graphic {
+  width: 200px;
+}
+
 .rc-indicator {
   display: block;
   font-size: 4rem;

@@ -2,25 +2,36 @@
 import { app, ActionType, ActionsType, View, h } from 'hyperapp';
 import { Player } from './player';
 import { filter, scan, map } from 'rxjs/operators';
+import { DroneAerialGraphic, DroneFrontGraphic } from './common/DroneGraphic';
 
 const state = {
   count: 0,
 };
 
-const actions = {
-  down: (value: number) => (s: typeof state) => ({ count: s.count - value }),
-  up: (value: number) => (s: typeof state) => ({ count: s.count + value }),
+type State = typeof state;
+
+type Action = 'up' | 'down';
+
+type Actions = {
+  [A in Action]: ActionType<State, Actions>;
 };
 
-const view: View<typeof state, typeof actions> = (s, a) => (
+const actions: ActionsType<State, Actions> = {
+  down: (value: number) => s => ({ count: s.count - value }),
+  up: (value: number) => s => ({ count: s.count + value }),
+};
+
+const view: View<State, Actions> = (s, a) => (
   <div>
     <h1>{s.count}</h1>
     <button onclick={() => a.down(1)}>-</button>
     <button onclick={() => a.up(1)}>+</button>
+    <DroneAerialGraphic flying={true} />
+    <DroneFrontGraphic flying={true} />
   </div>
 );
 
-app(state, actions, view, document.body);
+app<State, Actions>(state, actions, view, document.body);
 // interface Status {
 //   flying: boolean;
 //   onGround: boolean;

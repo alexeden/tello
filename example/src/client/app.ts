@@ -24,11 +24,6 @@ enum Controls {
   RotateCW = 'KeyK',
 }
 
-type ControlKeyMap = {
-  [P in Controls]: 0 | 1
-};
-
-
 Vue.use(VueRx);
 
 new Vue({
