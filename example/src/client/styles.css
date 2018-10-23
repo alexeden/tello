@@ -1,3 +1,5 @@
+/* @import 'common/Graphics.scss'; */
+
 body {
   background-color: #835eff;
   color: white;
@@ -16,10 +18,6 @@ canvas {
 
 svg {
   fill: white;
-}
-
-.graphic {
-  width: 200px;
 }
 
 .rc-indicator {
@@ -111,36 +109,4 @@ pre {
   line-height: 1.5;
   color: black;
   background-color: #e1e1e1;
-}
-
-
-.spin .propeller {
-  animation-name: spin;
-  animation-duration: .4s;
-  animation-iteration-count: infinite;
-  animation-timing-function: linear;
-  transform-origin: 50% 50%;
-  transform-box: fill-box;
-}
-
-.propeller:nth-child(1) { animation-delay: .06s;   }
-.propeller:nth-child(2) { animation-delay: .1s;  }
-.propeller:nth-child(3) { animation-delay: .25s;   }
-.propeller:nth-child(4) { animation-delay: .15s;   }
-
-.propeller--cw {
-  animation-direction: normal;
-}
-
-.propeller--ccw {
-  animation-direction: reverse;
-}
-
-@keyframes spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }

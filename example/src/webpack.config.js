@@ -7,7 +7,7 @@ module.exports = {
   context: path.resolve(__dirname, 'client'),
   entry: './app.ts',
   resolve: {
-    extensions: ['.ts', '.js', '.html'],
+    extensions: ['.ts', '.tsx', '.js', '.html'],
     alias: {
       vue$: 'vue/dist/vue.esm.js',
     },
@@ -46,7 +46,7 @@ module.exports = {
         },
       },
       {
-        test: /\.ts$/,
+        test: /\.tsx?$/,
         loader: 'ts-loader',
       },
       {
@@ -59,6 +59,18 @@ module.exports = {
           'style-loader',
           'css-loader',
         ],
+      },
+      {
+        test: /\.scss$/,
+        use: [
+          { loader: 'style-loader' },
+          { loader: 'css-loader' },
+          {
+            loader: 'sass-loader',
+            options: {
+              includePaths: [], // 'absolute/path/a', 'absolute/path/b']
+            }
+        }]
       },
       {
         test: /\.wasm$/,
