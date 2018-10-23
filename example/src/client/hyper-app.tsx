@@ -2,7 +2,7 @@
 import { app, ActionType, ActionsType, View, h } from 'hyperapp';
 import { Player } from './player';
 import { filter, scan, map } from 'rxjs/operators';
-import { DroneAerialGraphic, DroneFrontGraphic } from './common/DroneGraphic';
+import { DroneAerialGraphic, DroneFrontGraphic, AntennaGraphic } from './common';
 
 const state = {
   count: 0,
@@ -26,8 +26,9 @@ const view: View<State, Actions> = (s, a) => (
     <h1>{s.count}</h1>
     <button onclick={() => a.down(1)}>-</button>
     <button onclick={() => a.up(1)}>+</button>
-    <DroneAerialGraphic flying={true} />
-    <DroneFrontGraphic flying={true} />
+    <DroneAerialGraphic style={{ height: '200px' }} flying={true} />
+    <DroneFrontGraphic style={{ height: '200px' }} flying={true} />
+    <AntennaGraphic style={{ height: '200px' }} broadcasting={true} />
   </div>
 );
 

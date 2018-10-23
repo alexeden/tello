@@ -1,13 +1,15 @@
+import './Graphics.scss';
 import { h, Component } from 'hyperapp';
 
 interface DroneGraphicAttributes {
   flying: boolean;
+  style?: object;
 }
 
-export const DroneAerialGraphic: Component<DroneGraphicAttributes> = ({ flying }) => (
+export const DroneAerialGraphic: Component<DroneGraphicAttributes> = ({ flying, style = {} }) => (
   <svg
-    class={`pos-relative graphic drone ${flying ? 'spin' : ''}`}
-    style="display: block"
+    class={`graphic drone-aerial ${flying ? 'flying' : ''}`}
+    style={{ ...style }}
     xmlns="http://www.w3.org/2000/svg"
     xmlnsXlink="http://www.w3.org/1999/xlink"
     viewBox="-43 -43 640 640"
@@ -23,9 +25,10 @@ export const DroneAerialGraphic: Component<DroneGraphicAttributes> = ({ flying }
   </svg>
 );
 
-export const DroneFrontGraphic: Component<DroneGraphicAttributes> = ({ flying }) => (
+export const DroneFrontGraphic: Component<DroneGraphicAttributes> = ({ flying, style = {} }) => (
   <svg
-    class="graphic"
+    class={`graphic drone-front ${flying ? 'flying' : ''}`}
+    style={{ ...style }}
     xmlns="http://www.w3.org/2000/svg"
     xmlnsXlink="http://www.w3.org/1999/xlink"
     viewBox="0 0 1300 290">
@@ -46,6 +49,45 @@ export const DroneFrontGraphic: Component<DroneGraphicAttributes> = ({ flying })
     <g class="propellers" fill="white">
       <path class="prop" d=" M 270 60 L 300 60 L 300 20 Q 311 30 330 30 Q 349 30 570 10 L 300 10 Q 300 0 290 0 C 286 0 284 0 280 0 Q 270 0 270 10 L 0 10 Q 220 30 240 30 Q 260 30 270 20 L 270 60 Z "/>
       <path class="prop" d=" M 1000 60 L 1030 60 L 1030 20 Q 1041 30 1060 30 Q 1079 30 1300 10 L 1030 10 Q 1030 0 1020 0 C 1016 0 1014 0 1010 0 Q 1000 0 1000 10 L 730 10 Q 950 30 970 30 Q 990 30 1000 20 L 1000 60 Z "/>
+    </g>
+  </svg>
+);
+
+export interface AntennaGraphicAttributes {
+  broadcasting: boolean;
+  style?: object;
+}
+
+export const AntennaGraphic: Component<AntennaGraphicAttributes> = ({ broadcasting, style = {} }) => (
+  <svg
+    class={`graphic antenna ${broadcasting ? 'broadcasting' : ''}`}
+    style={{ ...style }}
+    xmlns="http://www.w3.org/2000/svg"
+    xmlnsXlink="http://www.w3.org/1999/xlink"
+    viewBox="0 0 400 700">
+    <g id="supports"  stroke="white" stroke-width="14px" stroke-linecap="round">
+      <line x1="317" x2="197" y1="628" y2="213"/>
+      <line x1="197" x2="197" y1="213" y2="698"/>
+      <line x1="197" x2="77" y1="213" y2="628"/>
+      <line x1="317" x2="197" y1="628" y2="536"/>
+      <line x1="277" x2="197" y1="490" y2="698"/>
+      <line x1="197" x2="77" y1="536" y2="628"/>
+      <line x1="117" x2="197" y1="490" y2="698"/>
+      <line x1="277" x2="197" y1="490" y2="374"/>
+      <line x1="197" x2="157" y1="536" y2="351"/>
+      <line x1="237" x2="197" y1="351" y2="536"/>
+      <line x1="197" x2="117" y1="374" y2="490"/>
+    </g>
+    <g id="beams" stroke="white" stroke-width="14px" stroke-linecap="round">
+      <path class="beam beam--2" fill="none" d=" M 152 279 C 131 264 117 240 117 213 C 117 169 153 133 197 133 C 241 133 277 169 277 213 C 277 240 263 264 242 279"/>
+      <path class="beam beam--1" fill="none" d=" M 166 238 C 161 232 157 223 157 213 C 157 191 175 173 197 173 C 219 173 237 191 237 213 C 237 223 233 232 228 238"/>
+    </g>
+    <g class="zaps" stroke="white" stroke-width="10px" stroke-linecap="round">
+      <path d=" M 187 2 L 207 71 M 207 71 L 197 66 M 187 48 L 177 42 M 187 2 L 187 48 M 177 42 L 197 112 M 197 66 L 197 112 Z"/>
+      <path d=" M 382 97 L 332 149 M 332 149 L 332 138 M 342 120 L 342 109 M 382 97 L 342 120 M 342 109 L 292 161 M 332 138 L 292 161"/>
+      <path d=" M 2 109 L 72 126 M 72 126 L 62 132 M 42 132 L 32 138 M 2 109 L 42 132 M 32 138 L 102 155 M 62 132 L 102 155"/>
+      <path d=" M 397 288 L 327 270 M 327 270 L 337 265 M 357 265 L 367 259 M 397 288 L 357 265 M 367 259 L 297 242 M 337 265 L 297 242"/>
+      <path d=" M 7 311 L 57 259 M 57 259 L 57 270 M 47 288 L 47 299 M 7 311 L 47 288 M 47 299 L 97 247 M 57 270 L 97 247"/>
     </g>
   </svg>
 );
